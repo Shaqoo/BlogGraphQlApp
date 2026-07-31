@@ -1,0 +1,64 @@
+using BlogGraphQlApp.Core.Repositories;
+using BlogGraphQlApp.Data;
+using BlogGraphQlApp.Entities;
+using BlogGraphQlApp.Infrastructure.Repositories;
+using BlogGraphQlApp.Models;
+using BlogGraphQlApp.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace BlogGraphQlApp.Infrastructure
+{
+    public class UnitOfWork : IUnitOfWork, IDisposable
+    {
+        private readonly AppDbContext _context;
+
+        public IRepository<User> Users { get; }
+        public IRepository<Post> Posts { get; }
+        public IRepository<Reel> Reels { get; }
+        public IRepository<Reaction> Reactions { get; }
+        public IRepository<Reply> Replies { get; }
+        public IRepository<Notification> Notifications { get; }
+        public IRepository<UserInteraction> UserInteractions { get; }
+        public IRepository<UserFollow> UserFollows { get; }
+        public IRepository<Conversation> Conversations { get; }
+        public IRepository<Message> Messages { get; }
+        public IRepository<PostMention> PostMentions { get; }
+        public IRepository<Hashtag> HashTags { get; }
+        public IRepository<PostHashtag> PostHashtags { get; }
+
+        public IRepository<ModerationResult> ModerationResults { get; }
+
+        public IRepository<AiUsage> AiUsages { get; }
+
+        public UnitOfWork(IDbContextFactory<AppDbContext> factory)
+        {
+            _context = factory.CreateDbContext();
+            Users = new Repository<User>(_context);
+            Posts = new Repository<Post>(_context);
+            Reels = new Repository<Reel>(_context);
+            Reactions = new Repository<Reaction>(_context);
+            Replies = new Repository<Reply>(_context);
+            Notifications = new Repository<Notification>(_context);
+            UserInteractions = new Repository<UserInteraction>(_context);
+            UserFollows = new Repository<UserFollow>(_context);
+            Conversations = new Repository<Conversation>(_context);
+            Messages = new Repository<Message>(_context);
+            PostMentions = new Repository<PostMention>(_context);
+            HashTags = new Repository<Hashtag>(_context);
+            PostHashtags = new Repository<PostHashtag>(_context);
+            AiUsages = new Repository<AiUsage>(_context);
+            ModerationResults = new Repository<ModerationResult>(_context);
+        }
+
+        public async Task<int> CompleteAsync()
+        {
+            return await _context.SaveChangesAsync();
+        }
+
+        public void Dispose()
+        {
+            _context.Dispose();
+            GC.SuppressFinalize(this);
+        }
+    }
+}

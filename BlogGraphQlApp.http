@@ -1,0 +1,6 @@
+@BlogGraphQlApp_HostAddress = http://localhost:5250
+
+GET {{BlogGraphQlApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

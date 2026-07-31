@@ -1,0 +1,150 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Accord.Video.FFMPEG" Version="3.8.0" />
+    <PackageReference Include="Accord.Video.FFMPEG.x64" Version="3.8.0" />
+    <PackageReference Include="Agora-Token-Generator" Version="1.0.1" />
+    <PackageReference Include="agora_rtc_sdk" Version="4.2.6.19-alpha.1" />
+    <PackageReference Include="agora_rtc_sdk_test" Version="3.2.1.10" />
+    <PackageReference Include="AppAny.HotChocolate.FluentValidation" Version="0.12.0" />
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="codecracker.CSharp" Version="1.1.0" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
+    <PackageReference Include="Google.GenAI" Version="0.6.0" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.Subscriptions" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.Subscriptions.InMemory" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.Types" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.Types.Scalars.Upload" Version="16.0.0-p.9.3" />
+    <PackageReference Include="HotChocolate.Utilities.DependencyInjection" Version="16.0.0-p.9.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
+    <PackageReference Include="Microsoft.ML" Version="4.0.3" />
+    <PackageReference Include="Microsoft.ML.Recommender" Version="0.22.3" />
+    <PackageReference Include="Mscc.GenerativeAI.Google" Version="2.9.3" />
+    <PackageReference Include="OpenAI" Version="2.7.0" />
+    <PackageReference Include="Pinecone.Client" Version="4.0.2" />
+    <PackageReference Include="Pinecone.NET" Version="3.0.0" />
+    <PackageReference Include="Polly" Version="8.6.5" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
+    <PackageReference Include="Scrypt.NET" Version="1.3.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageReference Include="SkiaSharp" Version="3.119.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.1" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+    <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+    <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
+    <PackageReference Include="Xabe.FFmpeg.Downloader" Version="6.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avutil-55.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avutil-55.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avutil-55.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avformat-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avformat-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avformat-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avdevice-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avdevice-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avdevice-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avcodec-57.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\avfilter-6.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avfilter-6.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\avfilter-6.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\swscale-4.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swscale-4.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swscale-4.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="C:\Users\ADMIN\.nuget\packages\accord.video.ffmpeg.x64\3.8.0\build\swresample-2.dll" />
+  </ItemGroup>
+</Project>
