@@ -28,6 +28,19 @@ using Microsoft.EntityFrameworkCore;
 using OpenAI;
 
 
+// Load environment variables from a .env file if one exists (local development or
+// container mounts). This must run before the host is built so the values are picked
+// up by the configuration providers, where they override appsettings.json.
+try
+{
+    DotNetEnv.Env.Load();
+}
+catch (Exception)
+{
+    // A missing or invalid .env file is not fatal; the app can still run from appsettings.
+    Console.WriteLine("A missing or invalid .env file is not fatal; the app can still run from appsettings.");
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

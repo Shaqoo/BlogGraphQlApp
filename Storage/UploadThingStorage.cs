@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Path = System.IO.Path;
 
@@ -6,8 +7,10 @@ namespace BlogGraphQlApp.Storage
 {
     /// <summary>
     /// Uploads files to UploadThing (https://uploadthing.com) and returns their public URLs.
-    /// Used in the Production environment. The API token is read from configuration:
-    /// the <c>UPLOADTHING_TOKEN</c> environment variable (or <c>UploadThing:Token</c> in app settings).
+    /// Used in the Production environment. Requests are authenticated with the app's API key
+    /// (the "Secret", e.g. <c>sk_live_...</c>). It is read from configuration:
+    /// <c>UPLOADTHING_SECRET</c> / <c>UploadThing:Secret</c>, or derived from the
+    /// <c>UPLOADTHING_TOKEN</c> / <c>UploadThing:Token</c> value.
     /// </summary>
     public class UploadThingStorage : IFileStorage
     {
@@ -64,7 +67,7 @@ namespace BlogGraphQlApp.Storage
 
             var client = _httpClientFactory.CreateClient();
             using var request = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl + DeleteFilesEndpoint);
-            request.Headers.Add("x-uploadthing-api-key", GetToken());
+            request.Headers.Add("x-uploadthing-api-key", GetApiKey());
             request.Content = JsonContent.Create(new { fileKeys = new[] { fileKey } });
 
             using var response = await client.SendAsync(request);
@@ -96,7 +99,7 @@ namespace BlogGraphQlApp.Storage
 
         private async Task<string> UploadBytesAsync(byte[] data, string fileName, string contentType)
         {
-            var apiKey = GetToken();
+            var apiKey = GetApiKey();
 
             var prepareResponse = await RequestPresignedUploadAsync(apiKey, fileName, data.Length, contentType);
             var presignedUrl = prepareResponse.GetProperty("url").GetString()
@@ -120,6 +123,15 @@ namespace BlogGraphQlApp.Storage
             var uploadJson = await ReadJsonOrThrowAsync(uploadResponse, "upload file");
 
             var fileUrl = TryGetString(uploadJson, "ufsUrl") ?? TryGetString(uploadJson, "url");
+            if (string.IsNullOrEmpty(fileUrl))
+            {
+                // Fallback: build the canonical public URL from the app id if the
+                // upload response did not include a URL.
+                var appId = GetAppId();
+                if (!string.IsNullOrEmpty(appId))
+                    fileUrl = $"https://{appId}.ufs.sh/f/{fileKey}";
+            }
+
             if (string.IsNullOrEmpty(fileUrl))
                 throw new InvalidOperationException("UploadThing did not return a file URL after upload.");
 
@@ -145,18 +157,43 @@ namespace BlogGraphQlApp.Storage
             return await ReadJsonOrThrowAsync(response, "prepare upload");
         }
 
-        private string GetToken()
+        private string GetApiKey()
         {
+            // UploadThing authenticates requests with the API key ("Secret"), e.g. "sk_live_...",
+            // sent in the x-uploadthing-api-key header.
+            var secret = _configuration["UPLOADTHING_SECRET"] ?? _configuration["UploadThing:Secret"];
+            if (!string.IsNullOrWhiteSpace(secret))
+                return secret;
+
+            // Fallback: derive the API key from the full token (base64 JSON with apiKey/appId/regions).
             var token = _configuration["UPLOADTHING_TOKEN"] ?? _configuration["UploadThing:Token"];
-            if (string.IsNullOrWhiteSpace(token))
+            if (!string.IsNullOrWhiteSpace(token))
             {
-                throw new InvalidOperationException(
-                    "UploadThing token is missing. Set the UPLOADTHING_TOKEN environment variable " +
-                    "(or UploadThing:Token in app settings) when using UploadThing storage.");
+                try
+                {
+                    var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
+                    using var document = JsonDocument.Parse(decoded);
+                    var root = document.RootElement;
+
+                    foreach (var propertyName in new[] { "apiKey", "key" })
+                    {
+                        if (root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String)
+                            return value.GetString()!;
+                    }
+                }
+                catch (Exception)
+                {
+                    _logger.LogWarning("UPLOADTHING_TOKEN could not be decoded to an API key.");
+                }
             }
 
-            return token;
+            throw new InvalidOperationException(
+                "UploadThing API key is missing. Set the UPLOADTHING_SECRET environment variable " +
+                "(or UploadThing:Secret in app settings) when using UploadThing storage.");
         }
+
+        private string? GetAppId() =>
+            _configuration["UPLOADTHING_APP_ID"] ?? _configuration["UploadThing:AppId"];
 
         private static async Task<JsonElement> ReadJsonOrThrowAsync(HttpResponseMessage response, string action)
         {

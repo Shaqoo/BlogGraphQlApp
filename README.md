@@ -13,12 +13,12 @@ All file uploads/downloads go through `IFileStorage` (`Storage/IFileStorage.cs`)
 
 ### Configuration
 
-The `UploadThingStorage` provider reads its API token from:
+The `UploadThingStorage` provider authenticates every API request with the app's **API key (Secret)** in the `x-uploadthing-api-key` header. It reads the key from:
 
-1. The `UPLOADTHING_TOKEN` environment variable (recommended for production — never commit real tokens), or
-2. `UploadThing:Token` in `appsettings.json` (placeholder only).
+1. `UPLOADTHING_SECRET` environment variable, or `UploadThing:Secret` in `appsettings.json` (recommended), or
+2. The `UPLOADTHING_TOKEN` / `UploadThing:Token` value (base64 JSON), from which the key is extracted automatically.
 
-The token is the base64-encoded JSON value from your UploadThing dashboard. If it is missing, uploads fail with a clear error instead of silently falling back.
+`UPLOADTHING_APP_ID` / `UploadThing:AppId` is the public app id; it is used only to build a fallback file URL (`https://{appId}.ufs.sh/f/{key}`) and is not a credential.
 
 ### Using the storage
 
@@ -28,6 +28,37 @@ Services depend on `IFileStorage` (never on the concrete providers):
 - `UploadAsync(byte[], subfolder, fileName)` — write raw bytes.
 - `DeleteAsync(fileUrl)` — remove a file by its stored URL.
 - `DownloadAsync(fileUrl)` — read a file back as bytes (used by captioning/moderation/embedding services).
+
+## Configuration & secrets
+
+Secrets are loaded from (in precedence order):
+
+1. Environment variables / `.env` file (see below) — used in production.
+2. `appsettings.json` — fallback for local development. It is gitignored and must not be committed.
+
+The project reads a `.env` file automatically on startup (via DotNetEnv) when running with `dotnet run`. Environment-variable names use the `Section__Key` convention, e.g. `Jwt__Key` → `Jwt:Key`, `OpenAI__ApiKey` → `OpenAI:ApiKey`.
+
+### Setup
+
+```bash
+cp .env.example .env
+# fill in real values
+dotnet run
+```
+
+## Docker
+
+The repo ships a `Dockerfile` and `docker-compose.yml` that run the API next to MySQL. The container runs with `ASPNETCORE_ENVIRONMENT=Production` (UploadThing storage).
+
+```bash
+cp .env.example .env          # fill in real values
+docker compose up --build
+```
+
+- API: http://localhost:8080/gql (Banana Cake Pop GraphQL IDE enabled)
+- MySQL data is persisted in the `db_data` volume; the API runs EF Core migrations on startup.
+
+Note: the API needs outbound internet access (UploadThing, OpenAI, Gemini, Pinecone). Video frame extraction via `Accord.Video.FFMPEG`/`System.Drawing` is Windows-only and will not work in a Linux container; enable Docker Desktop's WSL 2 integration so `docker` works in this shell.
 
 ## Getting started
 

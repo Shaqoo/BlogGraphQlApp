@@ -1,0 +1,52 @@
+name: blogapp
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: blogapp-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-blogapp_gql}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD:-rootpass} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - blogapp
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blogapp-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Production selects UploadThing storage and reads all secrets from the env file.
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "server=db;port=3306;database=${MYSQL_DATABASE:-blogapp_gql};user=root;password=${MYSQL_ROOT_PASSWORD:-rootpass};"
+    ports:
+      - "8080:8080"
+    networks:
+      - blogapp
+
+networks:
+  blogapp:
+
+volumes:
+  db_data:

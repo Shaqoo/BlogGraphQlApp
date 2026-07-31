@@ -35,7 +35,7 @@ namespace BlogGraphQlApp.BackgroundServices
                     {
                         try
                         {
-                             await vectorService.UpsertPostAsync(post);
+                            await vectorService.UpsertPostAsync(post);
                             post.IsVectorized = true;
                             uow.Posts.Update(post);
                         }
