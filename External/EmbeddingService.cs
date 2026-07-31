@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using BlogGraphQlApp.Storage;
 
 
 namespace BlogGraphQlApp.External
@@ -16,12 +17,14 @@ namespace BlogGraphQlApp.External
         private readonly OpenAIClient _openAi;
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
+        private readonly IFileStorage _fileStorage;
 
-        public EmbeddingService(HttpClient httpClient,OpenAIClient openAi, IConfiguration config)
+        public EmbeddingService(HttpClient httpClient,OpenAIClient openAi, IConfiguration config, IFileStorage fileStorage)
         {
             _httpClient = httpClient;
             _openAi = openAi ?? throw new ArgumentNullException(nameof(openAi));
             _apiKey = config["OpenAI:ApiKey"]!;
+            _fileStorage = fileStorage;
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -241,15 +244,10 @@ Do NOT include any text, explanation, or extra symbols.
     /// <summary>
     /// Helper to convert a file (image/video) into base64
     /// </summary>
-    /// <param name="filePath">todo: describe filePath parameter on ConvertFileToBase64</param>
-    public string ConvertFileToBase64(string filePath)
+    /// <param name="filePath">The stored URL of the file to convert.</param>
+    public async Task<string> ConvertFileToBase64Async(string filePath)
         {
-            var fullPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filePath.TrimStart('/'));
-
-            if (!System.IO.File.Exists(fullPath))
-                throw new System.IO.FileNotFoundException("File not found.", fullPath);
-
-            var bytes = System.IO.File.ReadAllBytes(fullPath);
+            var bytes = await _fileStorage.DownloadAsync(filePath);
             return Convert.ToBase64String(bytes);
         }
     }

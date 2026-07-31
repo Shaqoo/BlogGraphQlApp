@@ -7,6 +7,7 @@ using BlogGraphQlApp.Enums;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using BlogGraphQlApp.Storage;
 
 namespace BlogGraphQlApp.Infrastructure.Services
 {
@@ -15,16 +16,16 @@ namespace BlogGraphQlApp.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthService _authService;
         private readonly IAgoraService _agoraService;
-        private readonly IUploadService _uploadService;
+        private readonly IFileStorage _fileStorage;
         private readonly IMapper _mapper;
         private readonly ILogger<MessagingService> _logger;
 
-        public MessagingService(IUnitOfWork unitOfWork, IAuthService authService, IAgoraService agoraService, IUploadService uploadService, IMapper mapper, ILogger<MessagingService> logger)
+        public MessagingService(IUnitOfWork unitOfWork, IAuthService authService, IAgoraService agoraService, IFileStorage fileStorage, IMapper mapper, ILogger<MessagingService> logger)
         {
             _unitOfWork = unitOfWork;
             _authService = authService;
             _agoraService = agoraService;
-            _uploadService = uploadService;
+            _fileStorage = fileStorage;
             _mapper = mapper;
             _logger = logger;
         }
@@ -45,7 +46,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
 
             var fileUrl = string.Empty;
             if (messageType != MessageType.Text && file is not null)
-                fileUrl = await _uploadService.UploadFileAsync(file, messageType.ToString() + "s");
+                fileUrl = await _fileStorage.UploadAsync(file, messageType.ToString() + "s");
 
             var conversation = await GetOrCreateConversationAsync(fromUserId, toUserId);
 

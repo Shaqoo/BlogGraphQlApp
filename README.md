@@ -2,6 +2,33 @@
 
 
 
+## File storage
+
+All file uploads/downloads go through `IFileStorage` (`Storage/IFileStorage.cs`). Providers are selected automatically by environment:
+
+| Environment | Provider | Description |
+| --- | --- | --- |
+| Development | `LocalFileStorage` | Stores files under `wwwroot/uploads/...` and returns local URLs served by static files. No configuration required. |
+| Production | `UploadThingStorage` | Uploads files to UploadThing and returns public CDN URLs. |
+
+### Configuration
+
+The `UploadThingStorage` provider reads its API token from:
+
+1. The `UPLOADTHING_TOKEN` environment variable (recommended for production — never commit real tokens), or
+2. `UploadThing:Token` in `appsettings.json` (placeholder only).
+
+The token is the base64-encoded JSON value from your UploadThing dashboard. If it is missing, uploads fail with a clear error instead of silently falling back.
+
+### Using the storage
+
+Services depend on `IFileStorage` (never on the concrete providers):
+
+- `UploadAsync(IFile, subfolder)` — copy an uploaded GraphQL `File` into storage.
+- `UploadAsync(byte[], subfolder, fileName)` — write raw bytes.
+- `DeleteAsync(fileUrl)` — remove a file by its stored URL.
+- `DownloadAsync(fileUrl)` — read a file back as bytes (used by captioning/moderation/embedding services).
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.

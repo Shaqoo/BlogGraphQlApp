@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using BlogGraphQlApp.Repositories.Interfaces;
 using System.Text.RegularExpressions;
 using BlogGraphQlApp.Entities;
+using BlogGraphQlApp.Storage;
 
 namespace BlogGraphQlApp.Infrastructure.Services
 {
@@ -19,15 +20,15 @@ namespace BlogGraphQlApp.Infrastructure.Services
         private readonly IMapper _mapper;
         private readonly IAuthService _authService;
         private readonly ICacheService _cacheService;
-        private readonly IUploadService _uploadService;
+        private readonly IFileStorage _fileStorage;
 
-        public PostService(ILogger<PostService> logger, IMapper mapper, IUnitOfWork unitOfWork, IUploadService uploadService, IAuthService authService, ICacheService cacheService,IPostRepository postRepository)
+        public PostService(ILogger<PostService> logger, IMapper mapper, IUnitOfWork unitOfWork, IFileStorage fileStorage, IAuthService authService, ICacheService cacheService,IPostRepository postRepository)
         {
             _logger = logger;
             _mapper = mapper;
             _authService = authService;
             _unitOfWork = unitOfWork;
-            _uploadService = uploadService;
+            _fileStorage = fileStorage;
             _postRepository = postRepository;
             _cacheService = cacheService;
         }
@@ -159,7 +160,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
                 return ApiResponse<bool>.Fail("You are not authorized to delete this post.");
             }
 
-            if (!string.IsNullOrEmpty(post.MediaUrl)) await _uploadService.DeleteFileAsync(post.MediaUrl);
+            if (!string.IsNullOrEmpty(post.MediaUrl)) await _fileStorage.DeleteAsync(post.MediaUrl);
 
             _unitOfWork.Posts.Remove(post);
             await _unitOfWork.CompleteAsync();
@@ -203,7 +204,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
             _logger.LogInformation("Creating {MediaType} post for user {UserId} with title '{Title}'",
                                    isVideo ? "video" : "image", userId, createPostDto.Title);
 
-            var path = await _uploadService.UploadFileAsync(createPostDto.MediaUrl!, isVideo ? "videos" : "images");
+            var path = await _fileStorage.UploadAsync(createPostDto.MediaUrl!, isVideo ? "videos" : "images");
             if (path is null)
             {
                 _logger.LogError("File upload failed for user {UserId} and media '{Title}'", userId, createPostDto.Title);

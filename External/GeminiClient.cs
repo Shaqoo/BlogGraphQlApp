@@ -1,4 +1,5 @@
 ﻿using BlogGraphQlApp.Settings;
+using BlogGraphQlApp.Storage;
 using Google.GenAI;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
@@ -11,12 +12,14 @@ namespace BlogGraphQlApp.External
         private readonly HttpClient _httpClient;
         private readonly GeminiSettings _geminiSettings;
         private readonly ILogger<GeminiClient> _logger;
+        private readonly IFileStorage _fileStorage;
 
-        public GeminiClient(HttpClient httpClient, IOptions<GeminiSettings> options, ILogger<GeminiClient> logger)
+        public GeminiClient(HttpClient httpClient, IOptions<GeminiSettings> options, ILogger<GeminiClient> logger, IFileStorage fileStorage)
         {
             _httpClient = httpClient;
             _logger = logger;
             _geminiSettings = options.Value;
+            _fileStorage = fileStorage;
 
             _httpClient.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
             _httpClient.DefaultRequestHeaders.Authorization =
@@ -125,9 +128,8 @@ Tags: {string.Join(", ", tags)}";
 
         public async Task<List<string>> GenerateImageCaptionsAsync(string relativePath)
         {
-            // 1. Read file bytes from wwwroot
-            var fullPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath.TrimStart('/'));
-            var bytes = await File.ReadAllBytesAsync(fullPath);
+            // 1. Read file bytes from file storage (wwwroot in dev, UploadThing in production)
+            var bytes = await _fileStorage.DownloadAsync(relativePath);
             var base64 = Convert.ToBase64String(bytes);
 
             // 2. Build prompt
@@ -170,9 +172,6 @@ Tags: {string.Join(", ", tags)}";
 
         public async Task<List<string>> GenerateVideoCaptionsAsync(string relativePath, string transcript)
         {
-            // 1. Read video file path (not sent directly to Gemini)
-            var fullPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath.TrimStart('/'));
-
             // 2. Build prompt with transcript
             var prompt = $@"You are Reelio's caption generator.
 Suggest 3 short, catchy captions for this video based on its transcript.
@@ -209,9 +208,8 @@ Transcript:
 
         public async Task<(bool Allowed, List<string> Categories, string Rationale)> ModerateImageAsync(string relativePath)
         {
-            // 1. Read image from wwwroot
-            var fullPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath.TrimStart('/'));
-            var bytes = await File.ReadAllBytesAsync(fullPath);
+            // 1. Read image from file storage (wwwroot in dev, UploadThing in production)
+            var bytes = await _fileStorage.DownloadAsync(relativePath);
             var base64 = Convert.ToBase64String(bytes);
 
             // 2. Build prompt

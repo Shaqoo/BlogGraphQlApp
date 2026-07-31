@@ -53,7 +53,7 @@ public class ContentVectorService
         {
             try
             {
-                var base64 = _embeddingService.ConvertFileToBase64(post.MediaUrl);
+                var base64 = await _embeddingService.ConvertFileToBase64Async(post.MediaUrl);
 
                 var mediaVector = post.PostType == Enums.PostType.Image
                     ? await _embeddingService.CreateMediaEmbeddingAsync(base64)
@@ -104,7 +104,7 @@ public class ContentVectorService
     /// <param name="userId">todo: describe userId parameter on UpsertMediaAsync</param>
     public async Task UpsertMediaAsync(Guid postId, string mediaPath, string title = "", Guid? userId = null)
     {
-        var base64 = _embeddingService.ConvertFileToBase64(mediaPath);
+        var base64 = await _embeddingService.ConvertFileToBase64Async(mediaPath);
         var mediaVector = await _embeddingService.CreateMediaEmbeddingAsync(base64);
 
         await _pineconeService.UpsertAsync(

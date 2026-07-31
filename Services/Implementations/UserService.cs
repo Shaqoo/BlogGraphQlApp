@@ -7,6 +7,7 @@ using BlogGraphQlApp.Repositories.Interfaces;
 using BlogGraphQlApp.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Scrypt;
+using BlogGraphQlApp.Storage;
 
 namespace BlogGraphQlApp.Services.Implementations
 {
@@ -15,18 +16,18 @@ namespace BlogGraphQlApp.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UserService> _logger;
         private readonly IMapper _mapper;
-        private readonly IUploadService _uploadService;
+        private readonly IFileStorage _fileStorage;
         private readonly ICacheService _cacheService;
         private readonly IEmailService _emailService;
         private readonly ScryptEncoder _encoder;
         private readonly IAvatarGeneratorService _avatarGeneratorService;
 
-        public UserService(IUnitOfWork unitOfWork, ILogger<UserService> logger, IMapper mapper, IUploadService uploadService, IEmailService emailService, ICacheService cacheService,IAvatarGeneratorService avatarGeneratorService)
+        public UserService(IUnitOfWork unitOfWork, ILogger<UserService> logger, IMapper mapper, IFileStorage fileStorage, IEmailService emailService, ICacheService cacheService,IAvatarGeneratorService avatarGeneratorService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _mapper = mapper;
-            _uploadService = uploadService;
+            _fileStorage = fileStorage;
             _emailService = emailService;
             _cacheService = cacheService;
             _encoder = new ScryptEncoder();
@@ -56,7 +57,7 @@ namespace BlogGraphQlApp.Services.Implementations
 
             var initials = GetFirstAndLastInitials(user.FullName);
             var avatar = _avatarGeneratorService.GenerateAvatar(initials);
-            var avatarUrl = await _uploadService.UploadAvatarAsync(avatar, "profiles");
+            var avatarUrl = await _fileStorage.UploadAsync(avatar, "profiles", $"{initials}_{Guid.NewGuid()}.png");
             user.ProfilePictureUrl = avatarUrl;
             user.CoverPictureUrl = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80";
 
@@ -76,8 +77,8 @@ namespace BlogGraphQlApp.Services.Implementations
             var user = await _unitOfWork.Users.GetByIdAsync(id);
             if (user is null) return ApiResponse<bool>.Fail("User not found.");
 
-            await _uploadService.DeleteFileAsync(user.ProfilePictureUrl);
-            await _uploadService.DeleteFileAsync(user.CoverPictureUrl);
+            await _fileStorage.DeleteAsync(user.ProfilePictureUrl);
+            await _fileStorage.DeleteAsync(user.CoverPictureUrl);
 
             _unitOfWork.Users.Remove(user);
             await _unitOfWork.CompleteAsync();
@@ -134,14 +135,14 @@ namespace BlogGraphQlApp.Services.Implementations
 
             if (dto.ProfilePicture != null)
             {
-                await _uploadService.DeleteFileAsync(user.ProfilePictureUrl);
+                await _fileStorage.DeleteAsync(user.ProfilePictureUrl);
 
-                var newUrl = await _uploadService.UploadFileAsync(dto.ProfilePicture, "profiles");
+                var newUrl = await _fileStorage.UploadAsync(dto.ProfilePicture, "profiles");
                 user.ProfilePictureUrl = newUrl;
             }
             else
             {
-                await _uploadService.DeleteFileAsync(user.ProfilePictureUrl);
+                await _fileStorage.DeleteAsync(user.ProfilePictureUrl);
                 user.ProfilePictureUrl = null;
             }
 
@@ -157,13 +158,13 @@ namespace BlogGraphQlApp.Services.Implementations
 
             if (dto.CoverPictureUrl != null)
             {
-                await _uploadService.DeleteFileAsync(user.CoverPictureUrl);
-                var newUrl = await _uploadService.UploadFileAsync(dto.CoverPictureUrl, "covers");
+                await _fileStorage.DeleteAsync(user.CoverPictureUrl);
+                var newUrl = await _fileStorage.UploadAsync(dto.CoverPictureUrl, "covers");
                 user.CoverPictureUrl = newUrl;
             }
             else
             {
-                await _uploadService.DeleteFileAsync(user.CoverPictureUrl);
+                await _fileStorage.DeleteAsync(user.CoverPictureUrl);
                 user.CoverPictureUrl = null;
             }
 

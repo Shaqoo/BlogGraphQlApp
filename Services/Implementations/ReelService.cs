@@ -1,10 +1,11 @@
-﻿﻿using AutoMapper;
+﻿using AutoMapper;
 using BlogGraphQlApp.Common;
 using BlogGraphQlApp.Core.Interfaces;
 using BlogGraphQlApp.DTOs;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using BlogGraphQlApp.Storage;
 
 namespace BlogGraphQlApp.Infrastructure.Services
 {
@@ -14,15 +15,15 @@ namespace BlogGraphQlApp.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IAuthService _authService;
-        private readonly IUploadService _uploadService;
+        private readonly IFileStorage _fileStorage;
 
-        public ReelService(ILogger<ReelService> logger, IUnitOfWork unitOfWork, IMapper mapper, IAuthService authService, IUploadService uploadService)
+        public ReelService(ILogger<ReelService> logger, IUnitOfWork unitOfWork, IMapper mapper, IAuthService authService, IFileStorage fileStorage)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _authService = authService;
-            _uploadService = uploadService;
+            _fileStorage = fileStorage;
         }
 
         public async Task<ApiResponse<ReelDto>> CreateReelAsync(CreateReelDto createReelDto)
@@ -34,7 +35,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
                 return ApiResponse<ReelDto>.Fail("User not authenticated.");
             }
 
-            var videoPath = await _uploadService.UploadFileAsync(createReelDto.Video, "reels");
+            var videoPath = await _fileStorage.UploadAsync(createReelDto.Video, "reels");
             if (videoPath is null)
             {
                 return ApiResponse<ReelDto>.Fail("Video upload failed.");
@@ -72,7 +73,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
                 return ApiResponse<bool>.Fail("You are not authorized to delete this reel.");
             }
 
-            await _uploadService.DeleteFileAsync(reel.VideoUrl);
+            await _fileStorage.DeleteAsync(reel.VideoUrl);
             _unitOfWork.Reels.Remove(reel);
             await _unitOfWork.CompleteAsync();
 

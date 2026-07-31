@@ -17,6 +17,8 @@ using BlogGraphQlApp.Repositories.Interfaces;
 using BlogGraphQlApp.Services.Implementations;
 using BlogGraphQlApp.Services.Interfaces;
 using BlogGraphQlApp.Settings;
+using BlogGraphQlApp.Storage;
+using Microsoft.Extensions.FileProviders;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using HotChocolate.AspNetCore;
@@ -64,7 +66,6 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     .AddScoped<IUserFollowService, UserFollowService>()
     .AddScoped<IAgoraService, AgoraService>()
     .AddScoped<IMessagingService, MessagingService>()
-    .AddScoped<IUploadService, UploadService>()
     .AddScoped<IAuthService, AuthService>()
     .AddSingleton<IAvatarGeneratorService,AvatarGeneratorService>()
     .AddScoped<IEmailService, EmailService>()
@@ -80,6 +81,25 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     .AddSingleton<ContentVectorService>()
     .AddHostedService<VectorizationBackgroundService>()
     .AddHostedService<AIUsageResetService>();
+
+// File storage is selected based on the runtime environment.
+// - Development: files are stored under wwwroot/uploads and served locally.
+// - Production:  files are uploaded to UploadThing using the UPLOADTHING_TOKEN
+//   environment variable (configure it on the hosting platform, never commit it).
+builder.Services.AddSingleton<LocalFileStorage>();
+builder.Services.AddSingleton<UploadThingStorage>();
+builder.Services.AddSingleton<IFileStorage>(sp =>
+{
+    var environment = sp.GetRequiredService<IWebHostEnvironment>();
+    return environment.IsDevelopment()
+        ? sp.GetRequiredService<LocalFileStorage>()
+        : sp.GetRequiredService<UploadThingStorage>();
+});
+
+// The wwwroot folder is git-ignored, so ensure it exists up front. This guarantees
+// Development uploads (LocalFileStorage) and static file serving work on a fresh clone.
+var webRootPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(webRootPath);
 
 builder.Services.AddSingleton(sp =>
 {
@@ -230,7 +250,10 @@ app.UseCors("AllowFrontend");
 
 app.UseWebSockets();
 
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(webRootPath)
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
