@@ -12,6 +12,7 @@ namespace BlogGraphQlApp.Entities
         public required string DailyRoomUrl { get; set; }
         public Guid StartedBy { get; set; }
         public GroupCallStatus Status { get; set; } = GroupCallStatus.Ringing;
+        public CallMediaType MediaType { get; set; } = CallMediaType.Video;
         public DateTime? EndedAt { get; set; }
         public ICollection<GroupVideoCallParticipant> Participants { get; set; } = [];
     }

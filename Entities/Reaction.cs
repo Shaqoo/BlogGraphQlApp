@@ -1,4 +1,5 @@
-﻿using BlogGraphQlApp.Enums;
+﻿using BlogGraphQlApp.Entities;
+using BlogGraphQlApp.Enums;
 
 namespace BlogGraphQlApp.Models
 {
@@ -17,5 +18,7 @@ namespace BlogGraphQlApp.Models
         public Guid? MessageId { get; set; }
         public Reply? Reply { get; set; }
         public Guid? ReplyId { get; set; }
+        public Guid? GroupMessageId { get; set; }
+        public GroupMessage? GroupMessage { get; set; }
     }
 }

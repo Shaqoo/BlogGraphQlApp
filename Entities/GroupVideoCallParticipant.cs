@@ -11,5 +11,9 @@ namespace BlogGraphQlApp.Entities
         public string? Token { get; set; }
         public DateTime? JoinedAt { get; set; }
         public DateTime? LeftAt { get; set; }
+        public bool IsMuted { get; set; }
+        public bool CameraEnabled { get; set; }
+        public bool ScreenSharing { get; set; }
+        public bool HandRaised { get; set; }
     }
 }

@@ -10,5 +10,8 @@ namespace BlogGraphQlApp.Entities
         public NotificationType NotificationType { get; set; }
         public required string Message { get; set; }
         public DateTime? ReadAt { get; set; }
+        public Guid? RelatedEntityId { get; set; }
+        public int RelatedEntityType { get; set; }
+        public string? Metadata { get; set; }
     }
 }
