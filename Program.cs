@@ -265,6 +265,7 @@ builder.Services
         .AddTypeExtension<GroupMutations>()
         .AddTypeExtension<GroupMessageMutations>()
         .AddTypeExtension<GroupCallMutations>()
+    .AddSocketSessionInterceptor<SocketSessionInterceptor>()
     .AddSubscriptionType(d => d.Name("Subscription"))
         .AddTypeExtension<MessagingSubscription>()
         .AddTypeExtension<ReactionSubscription>()

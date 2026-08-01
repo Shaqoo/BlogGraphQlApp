@@ -89,44 +89,44 @@ namespace BlogGraphQlApp.Services.Groups
             if (group is null)
                 return ApiResponse<GroupMessageDto>.Fail("Group not found.");
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
             try
             {
-                await _unitOfWork.GroupMessages.AddAsync(message);
-
-                foreach (var member in mentioned)
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
                 {
-                    await _unitOfWork.GroupMessageMentions.AddAsync(new GroupMessageMention
+                    await _unitOfWork.GroupMessages.AddAsync(message);
+
+                    foreach (var member in mentioned)
                     {
-                        MessageId = message.Id,
-                        UserId = member.UserId,
-                        MentionText = "@" + member.User.Username
-                    });
-                }
+                        await _unitOfWork.GroupMessageMentions.AddAsync(new GroupMessageMention
+                        {
+                            MessageId = message.Id,
+                            UserId = member.UserId,
+                            MentionText = "@" + member.User.Username
+                        });
+                    }
 
-                group.LastMessageId = message.Id;
-                group.LastActivityAt = DateTime.UtcNow;
-                group.UpdatedAt = DateTime.UtcNow;
-                _unitOfWork.ChatGroups.Update(group);
+                    group.LastMessageId = message.Id;
+                    group.LastActivityAt = DateTime.UtcNow;
+                    group.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.ChatGroups.Update(group);
 
-                foreach (var mentionedMember in mentioned)
-                {
-                    if (mentionedMember.UserId == senderId || !ShouldNotify(membersById[mentionedMember.UserId]))
-                        continue;
-                    await CreateMessageNotificationAsync(mentionedMember.UserId, NotificationType.GroupMention, message, group, ct);
-                }
+                    foreach (var mentionedMember in mentioned)
+                    {
+                        if (mentionedMember.UserId == senderId || !ShouldNotify(membersById[mentionedMember.UserId]))
+                            continue;
+                        await CreateMessageNotificationAsync(mentionedMember.UserId, NotificationType.GroupMention, message, group, ct);
+                    }
 
-                if (replyTo is not null && replyTo.SenderId != senderId && ShouldNotify(membersById[replyTo.SenderId]))
-                {
-                    await CreateMessageNotificationAsync(replyTo.SenderId, NotificationType.GroupReply, message, group, ct);
-                }
+                    if (replyTo is not null && replyTo.SenderId != senderId && ShouldNotify(membersById[replyTo.SenderId]))
+                    {
+                        await CreateMessageNotificationAsync(replyTo.SenderId, NotificationType.GroupReply, message, group, ct);
+                    }
 
-                await _unitOfWork.CompleteAsync(ct);
-                await tx.CommitAsync(ct);
+                    await _unitOfWork.CompleteAsync(ct);
+                }, ct);
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(ex, "Failed to send group message to group {GroupId}.", groupId);
                 return ApiResponse<GroupMessageDto>.Fail("Failed to send message.");
             }
@@ -618,7 +618,7 @@ namespace BlogGraphQlApp.Services.Groups
             return (page, pageSize);
         }
 
-        private async Task PublishAsync(string topic, object payload, CancellationToken ct)
+        private async Task PublishAsync<T>(string topic, T payload, CancellationToken ct)
         {
             try
             {

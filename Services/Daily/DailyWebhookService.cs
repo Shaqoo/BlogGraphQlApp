@@ -168,7 +168,7 @@ namespace BlogGraphQlApp.Services.Daily
             }
         }
 
-        private async Task PublishAsync(string topic, object payload, CancellationToken ct)
+        private async Task PublishAsync<T>(string topic, T payload, CancellationToken ct)
         {
             try
             {

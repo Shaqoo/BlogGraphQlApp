@@ -240,7 +240,7 @@ namespace BlogGraphQlApp.Services.Video
                 .Include(c => c.Recipient)
                 .FirstOrDefaultAsync(cancellationToken);
 
-        private async Task PublishAsync(string topic, object payload, CancellationToken cancellationToken)
+        private async Task PublishAsync<T>(string topic, T payload, CancellationToken cancellationToken)
         {
             try
             {

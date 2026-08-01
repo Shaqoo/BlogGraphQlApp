@@ -36,5 +36,12 @@ namespace BlogGraphQlApp.Repositories.Interfaces
         IRepository<GroupJoinRequest> GroupJoinRequests { get; }
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
         Task<int> CompleteAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Runs <paramref name="operation"/> inside a database transaction, retrying the whole block
+        /// when a retrying execution strategy is configured (user-initiated transactions must be
+        /// executed through <see cref="DatabaseFacade.CreateExecutionStrategy"/> for retries to work).
+        /// </summary>
+        Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default);
     }
 }

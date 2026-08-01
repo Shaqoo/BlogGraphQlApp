@@ -61,17 +61,18 @@ namespace BlogGraphQlApp.Services.Groups
                 LastActivityAt = DateTime.UtcNow
             };
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.ChatGroups.AddAsync(group);
-            await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                GroupId = group.Id,
-                UserId = ownerId,
-                Role = GroupMemberRole.Owner,
-                LastReadAt = DateTime.UtcNow
-            });
-            await _unitOfWork.CompleteAsync(ct);
-            await tx.CommitAsync(ct);
+                await _unitOfWork.ChatGroups.AddAsync(group);
+                await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+                {
+                    GroupId = group.Id,
+                    UserId = ownerId,
+                    Role = GroupMemberRole.Owner,
+                    LastReadAt = DateTime.UtcNow
+                });
+                await _unitOfWork.CompleteAsync(ct);
+            }, ct);
 
             _logger.LogInformation("Group {GroupId} created by {UserId}.", group.Id, ownerId);
             return ApiResponse<GroupDto>.Success(await ToGroupDtoAsync(group, ownerId, ct), "Group created.");
@@ -110,11 +111,12 @@ namespace BlogGraphQlApp.Services.Groups
 
             try
             {
-                await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-                await _unitOfWork.CompleteAsync(ct);
-                if (changes.Length > 0)
-                    await _messageService.InsertSystemMessageAsync(group, actorId, changes.ToString().Trim(), JsonSerializer.Serialize(new { actorId }), ct);
-                await tx.CommitAsync(ct);
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    await _unitOfWork.CompleteAsync(ct);
+                    if (changes.Length > 0)
+                        await _messageService.InsertSystemMessageAsync(group, actorId, changes.ToString().Trim(), JsonSerializer.Serialize(new { actorId }), ct);
+                }, ct);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -139,10 +141,11 @@ namespace BlogGraphQlApp.Services.Groups
             group.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.ChatGroups.Update(group);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, "Group image updated.", JsonSerializer.Serialize(new { actorId }), ct);
-            await tx.CommitAsync(ct);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, "Group image updated.", JsonSerializer.Serialize(new { actorId }), ct);
+            }, ct);
 
             if (oldUrl is not null)
                 await _fileStorage.DeleteAsync(oldUrl);
@@ -184,11 +187,12 @@ namespace BlogGraphQlApp.Services.Groups
             _unitOfWork.ChatGroupMembers.Update(target);
             _unitOfWork.ChatGroups.Update(group);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, $"Ownership transferred to {targetUser?.FullName ?? "a member"}.", JsonSerializer.Serialize(new { actorId, targetUserId }), ct);
-            await _notificationService.CreateAsync(targetUserId, NotificationType.GroupRoleChanged, $"You are now the owner of {group.Name}.", group.Id, (int)NotificationType.GroupRoleChanged, null, ct);
-            await tx.CommitAsync(ct);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, $"Ownership transferred to {targetUser?.FullName ?? "a member"}.", JsonSerializer.Serialize(new { actorId, targetUserId }), ct);
+                await _notificationService.CreateAsync(targetUserId, NotificationType.GroupRoleChanged, $"You are now the owner of {group.Name}.", group.Id, (int)NotificationType.GroupRoleChanged, null, ct);
+            }, ct);
 
             await PublishAsync($"{groupId}_GroupUpdated", await ToGroupDtoAsync(group, actorId, ct), ct);
             return ApiResponse<GroupDto>.Success(await ToGroupDtoAsync(group, actorId, ct), "Ownership transferred.");
@@ -273,18 +277,19 @@ namespace BlogGraphQlApp.Services.Groups
             if (!await AreFriendsAsync(actorId, userId))
                 return ApiResponse<bool>.Fail("You can only add friends to a group.");
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                GroupId = groupId,
-                UserId = userId,
-                Role = GroupMemberRole.Member,
-                LastReadAt = DateTime.UtcNow
-            });
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, $"{target.FullName} added to the group.", JsonSerializer.Serialize(new { actorId, userId }), ct);
-            await _notificationService.CreateAsync(userId, NotificationType.GroupMemberAdded, $"You were added to {group.Name}.", group.Id, (int)NotificationType.GroupMemberAdded, JsonSerializer.Serialize(new { groupId, groupName = group.Name, imageUrl = group.ImageUrl, addedBy = actorId }), ct);
-            await tx.CommitAsync(ct);
+                await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+                {
+                    GroupId = groupId,
+                    UserId = userId,
+                    Role = GroupMemberRole.Member,
+                    LastReadAt = DateTime.UtcNow
+                });
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, $"{target.FullName} added to the group.", JsonSerializer.Serialize(new { actorId, userId }), ct);
+                await _notificationService.CreateAsync(userId, NotificationType.GroupMemberAdded, $"You were added to {group.Name}.", group.Id, (int)NotificationType.GroupMemberAdded, JsonSerializer.Serialize(new { groupId, groupName = group.Name, imageUrl = group.ImageUrl, addedBy = actorId }), ct);
+            }, ct);
 
             await PublishAsync($"{groupId}_GroupMemberJoined", await ToMemberDtoAsync(userId, ct), ct);
             return ApiResponse<bool>.Success(true, "Member added.");
@@ -304,11 +309,12 @@ namespace BlogGraphQlApp.Services.Groups
 
             var target = await _unitOfWork.Users.GetByIdAsync(userId);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            _unitOfWork.ChatGroupMembers.Remove(targetMembership);
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, $"{target?.FullName ?? "A member"} was removed from the group.", JsonSerializer.Serialize(new { actorId, userId }), ct);
-            await tx.CommitAsync(ct);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                _unitOfWork.ChatGroupMembers.Remove(targetMembership);
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, $"{target?.FullName ?? "A member"} was removed from the group.", JsonSerializer.Serialize(new { actorId, userId }), ct);
+            }, ct);
 
             await PublishAsync($"{groupId}_GroupMemberLeft", await ToMemberDtoAsync(userId, ct), ct);
             return ApiResponse<bool>.Success(true, "Member removed.");
@@ -331,26 +337,27 @@ namespace BlogGraphQlApp.Services.Groups
 
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            _unitOfWork.ChatGroupMembers.Remove(membership);
-            await _unitOfWork.CompleteAsync(ct);
-
-            if (remainingMembers.Count == 0)
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                group.Archived = true;
-                group.UpdatedAt = DateTime.UtcNow;
-                _unitOfWork.ChatGroups.Update(group);
+                _unitOfWork.ChatGroupMembers.Remove(membership);
                 await _unitOfWork.CompleteAsync(ct);
-            }
-            else
-            {
-                await _messageService.InsertSystemMessageAsync(group, userId, $"{user?.FullName ?? "A member"} left the group.", JsonSerializer.Serialize(new { userId }), ct);
-                foreach (var remaining in remainingMembers)
+
+                if (remainingMembers.Count == 0)
                 {
-                    await _notificationService.CreateAsync(remaining.UserId, NotificationType.GroupUpdated, $"{user?.FullName ?? "A member"} left {group.Name}.", group.Id, (int)NotificationType.GroupUpdated, null, ct);
+                    group.Archived = true;
+                    group.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.ChatGroups.Update(group);
+                    await _unitOfWork.CompleteAsync(ct);
                 }
-            }
-            await tx.CommitAsync(ct);
+                else
+                {
+                    await _messageService.InsertSystemMessageAsync(group, userId, $"{user?.FullName ?? "A member"} left the group.", JsonSerializer.Serialize(new { userId }), ct);
+                    foreach (var remaining in remainingMembers)
+                    {
+                        await _notificationService.CreateAsync(remaining.UserId, NotificationType.GroupUpdated, $"{user?.FullName ?? "A member"} left {group.Name}.", group.Id, (int)NotificationType.GroupUpdated, null, ct);
+                    }
+                }
+            }, ct);
 
             await PublishAsync($"{groupId}_GroupMemberLeft", await ToMemberDtoAsync(userId, ct), ct);
             return ApiResponse<bool>.Success(true, "You left the group.");
@@ -405,10 +412,11 @@ namespace BlogGraphQlApp.Services.Groups
             group.InviteCode = GenerateInviteCode();
             group.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.ChatGroups.Update(group);
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, "Invite link regenerated.", JsonSerializer.Serialize(new { actorId }), ct);
-            await tx.CommitAsync(ct);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, "Invite link regenerated.", JsonSerializer.Serialize(new { actorId }), ct);
+            }, ct);
 
             return ApiResponse<string>.Success(group.InviteCode, "Invite code generated.");
         }
@@ -444,17 +452,18 @@ namespace BlogGraphQlApp.Services.Groups
 
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                GroupId = group.Id,
-                UserId = userId,
-                Role = GroupMemberRole.Member,
-                LastReadAt = DateTime.UtcNow
-            });
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, userId, $"{user?.FullName ?? "A member"} joined the group.", JsonSerializer.Serialize(new { userId }), ct);
-            await tx.CommitAsync(ct);
+                await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+                {
+                    GroupId = group.Id,
+                    UserId = userId,
+                    Role = GroupMemberRole.Member,
+                    LastReadAt = DateTime.UtcNow
+                });
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, userId, $"{user?.FullName ?? "A member"} joined the group.", JsonSerializer.Serialize(new { userId }), ct);
+            }, ct);
 
             await PublishAsync($"{group.Id}_GroupMemberJoined", await ToMemberDtoAsync(userId, ct), ct);
             return ApiResponse<GroupDto>.Success(await ToGroupDtoAsync(group, userId, ct), "Joined group.");
@@ -499,18 +508,19 @@ namespace BlogGraphQlApp.Services.Groups
             request.ResolvedBy = actorId;
             _unitOfWork.GroupJoinRequests.Update(request);
 
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                GroupId = groupId,
-                UserId = request.UserId,
-                Role = GroupMemberRole.Member,
-                LastReadAt = DateTime.UtcNow
-            });
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, $"{request.User.FullName} joined the group.", JsonSerializer.Serialize(new { actorId, userId = request.UserId }), ct);
-            await _notificationService.CreateAsync(request.UserId, NotificationType.GroupMemberAdded, $"Your request to join {group.Name} was approved.", group.Id, (int)NotificationType.GroupMemberAdded, null, ct);
-            await tx.CommitAsync(ct);
+                await _unitOfWork.ChatGroupMembers.AddAsync(new ChatGroupMember
+                {
+                    GroupId = groupId,
+                    UserId = request.UserId,
+                    Role = GroupMemberRole.Member,
+                    LastReadAt = DateTime.UtcNow
+                });
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, $"{request.User.FullName} joined the group.", JsonSerializer.Serialize(new { actorId, userId = request.UserId }), ct);
+                await _notificationService.CreateAsync(request.UserId, NotificationType.GroupMemberAdded, $"Your request to join {group.Name} was approved.", group.Id, (int)NotificationType.GroupMemberAdded, null, ct);
+            }, ct);
 
             await PublishAsync($"{groupId}_GroupMemberJoined", await ToMemberDtoAsync(request.UserId, ct), ct);
             return ApiResponse<bool>.Success(true, "Join request approved.");
@@ -615,11 +625,12 @@ namespace BlogGraphQlApp.Services.Groups
 
             target.Role = newRole;
             _unitOfWork.ChatGroupMembers.Update(target);
-            await using var tx = await _unitOfWork.BeginTransactionAsync(ct);
-            await _unitOfWork.CompleteAsync(ct);
-            await _messageService.InsertSystemMessageAsync(group, actorId, $"{targetUser?.FullName ?? "A member"} was {action}.", JsonSerializer.Serialize(new { actorId, userId }), ct);
-            await _notificationService.CreateAsync(userId, NotificationType.GroupRoleChanged, $"You were {action} in {group.Name}.", group.Id, (int)NotificationType.GroupRoleChanged, null, ct);
-            await tx.CommitAsync(ct);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _unitOfWork.CompleteAsync(ct);
+                await _messageService.InsertSystemMessageAsync(group, actorId, $"{targetUser?.FullName ?? "A member"} was {action}.", JsonSerializer.Serialize(new { actorId, userId }), ct);
+                await _notificationService.CreateAsync(userId, NotificationType.GroupRoleChanged, $"You were {action} in {group.Name}.", group.Id, (int)NotificationType.GroupRoleChanged, null, ct);
+            }, ct);
             return ApiResponse<bool>.Success(true, "Role updated.");
         }
 
@@ -693,7 +704,7 @@ namespace BlogGraphQlApp.Services.Groups
             await _unitOfWork.UserFollows.AnyAsync(f => f.FollowerId == a && f.FollowingId == b) &&
             await _unitOfWork.UserFollows.AnyAsync(f => f.FollowerId == b && f.FollowingId == a);
 
-        private async Task PublishAsync(string topic, object payload, CancellationToken ct)
+        private async Task PublishAsync<T>(string topic, T payload, CancellationToken ct)
         {
             try
             {

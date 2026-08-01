@@ -173,7 +173,7 @@ namespace BlogGraphQlApp.BackgroundServices
             }
         }
 
-        private async Task PublishAsync(ITopicEventSender events, string topic, object payload, CancellationToken cancellationToken)
+        private async Task PublishAsync<T>(ITopicEventSender events, string topic, T payload, CancellationToken cancellationToken)
         {
             try
             {

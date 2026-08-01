@@ -90,6 +90,25 @@ namespace BlogGraphQlApp.Infrastructure
         public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
             => await _context.Database.BeginTransactionAsync(cancellationToken);
 
+        public async Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    await operation();
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw;
+                }
+            });
+        }
+
         public async Task<int> CompleteAsync(CancellationToken cancellationToken = default)
         {
             return await _context.SaveChangesAsync(cancellationToken);
