@@ -225,7 +225,7 @@ namespace BlogGraphQlApp.Services.Groups
             {
                 GroupId = groupId,
                 SenderId = senderId,
-                Text = text.Trim()
+                Content = text.Trim()
             };
 
             await _unitOfWork.GroupMessages.AddAsync(message);
@@ -371,7 +371,7 @@ namespace BlogGraphQlApp.Services.Groups
             SenderId = message.SenderId,
             SenderName = sender?.FullName ?? string.Empty,
             SenderAvatar = sender?.ProfilePictureUrl,
-            Text = message.Text,
+            Content = message.Content,
             CreatedAt = message.CreatedAt,
             EditedAt = message.EditedAt,
             Deleted = message.Deleted
