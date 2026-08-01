@@ -114,6 +114,8 @@ builder.Services.AddHttpClient<IDailyCallService, DailyCallService>();
 builder.Services.AddScoped<IWebPushService, WebPushService>();
 builder.Services.AddScoped<IVideoCallService, VideoCallService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IGroupMessageService, GroupMessageService>();
+builder.Services.AddScoped<GroupPermissionService>();
 builder.Services.AddScoped<IGroupCallService, GroupCallService>();
 builder.Services.AddScoped<ICallHistoryService, CallHistoryService>();
 builder.Services.AddScoped<DailyWebhookService>();
@@ -245,6 +247,8 @@ builder.Services
         .AddTypeExtension<ReactionQueries>()
         .AddTypeExtension<VideoCallQueries>()
         .AddTypeExtension<GroupQueries>()
+        .AddTypeExtension<GroupMessageQueries>()
+        .AddTypeExtension<GroupCallQueries>()
     .AddMutationType(d => d.Name("Mutation"))
         .AddTypeExtension<AuthMutation>()
         .AddTypeExtension<UserMutation>()
@@ -259,11 +263,13 @@ builder.Services
         .AddTypeExtension<VideoCallMutations>()
         .AddTypeExtension<WebPushMutations>()
         .AddTypeExtension<GroupMutations>()
+        .AddTypeExtension<GroupMessageMutations>()
         .AddTypeExtension<GroupCallMutations>()
     .AddSubscriptionType(d => d.Name("Subscription"))
         .AddTypeExtension<MessagingSubscription>()
         .AddTypeExtension<ReactionSubscription>()
         .AddTypeExtension<CallSubscription>()
+        .AddTypeExtension<NotificationSubscription>()
     .AddType<UserType>()
     .AddType<ReelType>()
     .AddType<PostType>()
@@ -276,6 +282,9 @@ builder.Services
     .AddType<GroupMemberTypeGql>()
     .AddType<GroupMessageTypeGql>()
     .AddType<GroupCallTypeGql>()
+    .AddType<GroupMentionTypeGql>()
+    .AddType<GroupCallParticipantTypeGql>()
+    .AddType<GroupJoinRequestTypeGql>()
     .AddProjections()
     .AddFiltering()
     .AddSorting()
@@ -290,6 +299,10 @@ builder.Services
     .AddDataLoader<FollowingByUserIdDataLoader>()
     .AddDataLoader<ReactionsByReelIdDataLoader>()
     .AddDataLoader<ReactionsByReplyIdDataLoader>()
+    .AddDataLoader<ReactionsByGroupMessageIdDataLoader>()
+    .AddDataLoader<MentionsByGroupMessageIdDataLoader>()
+    .AddDataLoader<GroupMessageByIdDataLoader>()
+    .AddDataLoader<ReadsByGroupMessageIdDataLoader>()
     // .AddMutationConventions()
     .AddInMemorySubscriptions();
 
