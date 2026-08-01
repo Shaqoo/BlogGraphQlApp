@@ -1,4 +1,5 @@
 using BlogGraphQlApp.DTOs;
+using BlogGraphQlApp.GraphQL.Events;
 using HotChocolate.Authorization;
 using HotChocolate.Execution;
 using HotChocolate.Subscriptions;
@@ -79,5 +80,113 @@ namespace BlogGraphQlApp.GraphQL.Subscriptions
         public static async ValueTask<ISourceStream<GroupCallDto>> SubscribeToGroupCallEndedAsync(
             Guid groupId, [Service] ITopicEventReceiver eventReceiver)
             => await eventReceiver.SubscribeAsync<GroupCallDto>($"{groupId}_GroupCallEnded");
+
+        [Subscribe(With = nameof(SubscribeToGroupMessageEditedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a group message is edited.")]
+        public GroupMessageDto GroupMessageEdited([EventMessage] GroupMessageDto message) => message;
+
+        public static async ValueTask<ISourceStream<GroupMessageDto>> SubscribeToGroupMessageEditedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupMessageDto>($"{groupId}_GroupMessageEdited");
+
+        [Subscribe(With = nameof(SubscribeToGroupMessageDeletedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a group message is deleted.")]
+        public Guid GroupMessageDeleted([EventMessage] Guid messageId) => messageId;
+
+        public static async ValueTask<ISourceStream<Guid>> SubscribeToGroupMessageDeletedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<Guid>($"{groupId}_GroupMessageDeleted");
+
+        [Subscribe(With = nameof(SubscribeToGroupMessagePinnedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a group message is pinned or unpinned.")]
+        public GroupMessageDto GroupMessagePinned([EventMessage] GroupMessageDto message) => message;
+
+        public static async ValueTask<ISourceStream<GroupMessageDto>> SubscribeToGroupMessagePinnedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupMessageDto>($"{groupId}_GroupMessagePinned");
+
+        [Subscribe(With = nameof(SubscribeToGroupMessageReactionAddedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when someone reacts to a group message.")]
+        public Guid GroupMessageReactionAdded([EventMessage] Guid messageId) => messageId;
+
+        public static async ValueTask<ISourceStream<Guid>> SubscribeToGroupMessageReactionAddedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<Guid>($"{groupId}_GroupMessageReactionAdded");
+
+        [Subscribe(With = nameof(SubscribeToGroupMessageReactionRemovedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a reaction is removed from a group message.")]
+        public Guid GroupMessageReactionRemoved([EventMessage] Guid messageId) => messageId;
+
+        public static async ValueTask<ISourceStream<Guid>> SubscribeToGroupMessageReactionRemovedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<Guid>($"{groupId}_GroupMessageReactionRemoved");
+
+        [Subscribe(With = nameof(SubscribeToGroupMemberJoinedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a member joins a group.")]
+        public GroupMemberDto GroupMemberJoined([EventMessage] GroupMemberDto member) => member;
+
+        public static async ValueTask<ISourceStream<GroupMemberDto>> SubscribeToGroupMemberJoinedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupMemberDto>($"{groupId}_GroupMemberJoined");
+
+        [Subscribe(With = nameof(SubscribeToGroupMemberLeftAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a member leaves a group.")]
+        public GroupMemberDto GroupMemberLeft([EventMessage] GroupMemberDto member) => member;
+
+        public static async ValueTask<ISourceStream<GroupMemberDto>> SubscribeToGroupMemberLeftAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupMemberDto>($"{groupId}_GroupMemberLeft");
+
+        [Subscribe(With = nameof(SubscribeToGroupUpdatedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a group is updated.")]
+        public GroupDto GroupUpdated([EventMessage] GroupDto group) => group;
+
+        public static async ValueTask<ISourceStream<GroupDto>> SubscribeToGroupUpdatedAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupDto>($"{groupId}_GroupUpdated");
+
+        [Subscribe(With = nameof(SubscribeToGroupTypingAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a member starts or stops typing in a group.")]
+        public GroupTypingEvent UserTypingInGroup([EventMessage] GroupTypingEvent typingEvent) => typingEvent;
+
+        public static async ValueTask<ISourceStream<GroupTypingEvent>> SubscribeToGroupTypingAsync(
+            Guid groupId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupTypingEvent>($"{groupId}_GroupTyping");
+
+        [Subscribe(With = nameof(SubscribeToGroupCallParticipantJoinedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a participant joins a group call.")]
+        public GroupCallParticipantDto GroupCallParticipantJoined([EventMessage] GroupCallParticipantDto participant) => participant;
+
+        public static async ValueTask<ISourceStream<GroupCallParticipantDto>> SubscribeToGroupCallParticipantJoinedAsync(
+            Guid callId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupCallParticipantDto>($"{callId}_GroupCallParticipantJoined");
+
+        [Subscribe(With = nameof(SubscribeToGroupCallParticipantLeftAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a participant leaves a group call.")]
+        public GroupCallParticipantDto GroupCallParticipantLeft([EventMessage] GroupCallParticipantDto participant) => participant;
+
+        public static async ValueTask<ISourceStream<GroupCallParticipantDto>> SubscribeToGroupCallParticipantLeftAsync(
+            Guid callId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupCallParticipantDto>($"{callId}_GroupCallParticipantLeft");
+
+        [Subscribe(With = nameof(SubscribeToGroupCallParticipantUpdatedAsync))]
+        [Authorize]
+        [GraphQLDescription("Receives a realtime event when a group call participant's state changes (mute/camera/screenshare/hand).")]
+        public GroupCallParticipantDto GroupCallParticipantUpdated([EventMessage] GroupCallParticipantDto participant) => participant;
+
+        public static async ValueTask<ISourceStream<GroupCallParticipantDto>> SubscribeToGroupCallParticipantUpdatedAsync(
+            Guid callId, [Service] ITopicEventReceiver eventReceiver)
+            => await eventReceiver.SubscribeAsync<GroupCallParticipantDto>($"{callId}_GroupCallParticipantUpdated");
     }
 }
