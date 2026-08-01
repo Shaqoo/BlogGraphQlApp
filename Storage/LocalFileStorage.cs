@@ -1,4 +1,5 @@
 using System.IO;
+using Microsoft.Extensions.Options;
 using Path = System.IO.Path;
 
 namespace BlogGraphQlApp.Storage
@@ -11,22 +12,27 @@ namespace BlogGraphQlApp.Storage
     {
         private readonly IWebHostEnvironment _environment;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IOptions<StorageValidationOptions> _validationOptions;
         private readonly ILogger<LocalFileStorage> _logger;
 
         public LocalFileStorage(
             IWebHostEnvironment environment,
             IHttpClientFactory httpClientFactory,
+            IOptions<StorageValidationOptions> validationOptions,
             ILogger<LocalFileStorage> logger)
         {
             _environment = environment;
             _httpClientFactory = httpClientFactory;
+            _validationOptions = validationOptions;
             _logger = logger;
         }
 
         public async Task<string> UploadAsync(IFile file, string subfolder)
         {
             if (file == null || file.Length == 0)
-                throw new ArgumentException("File is empty or null.", nameof(file));
+                throw new InvalidFileException("File is empty or null.");
+
+            FileValidator.Validate(file, _validationOptions.Value);
 
             var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.Name)}";
             var relativeUrl = $"uploads/{subfolder}/{fileName}";
@@ -45,7 +51,9 @@ namespace BlogGraphQlApp.Storage
         public async Task<string> UploadAsync(byte[] data, string subfolder, string fileName)
         {
             if (data == null || data.Length == 0)
-                throw new ArgumentException("File content is empty or null.", nameof(data));
+                throw new InvalidFileException("File content is empty or null.");
+
+            FileValidator.Validate(Path.GetFileName(fileName), FileValidator.GuessContentType(fileName), data.Length, _validationOptions.Value);
 
             var safeFileName = Path.GetFileName(fileName);
             var relativeUrl = $"uploads/{subfolder}/{safeFileName}";

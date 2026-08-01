@@ -97,17 +97,21 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
 
 // File storage is selected based on the runtime environment.
 // - Development: files are stored under wwwroot/uploads and served locally.
-// - Production:  files are uploaded to UploadThing using the UPLOADTHING_TOKEN
+// - Production:  files are uploaded to UploadThing using the UPLOADTHING_SECRET
 //   environment variable (configure it on the hosting platform, never commit it).
-builder.Services.AddSingleton<LocalFileStorage>();
-builder.Services.AddSingleton<UploadThingStorage>();
-builder.Services.AddSingleton<IFileStorage>(sp =>
+builder.Services.Configure<StorageValidationOptions>(
+    builder.Configuration.GetSection(StorageValidationOptions.SectionName));
+
+builder.Services.AddHttpClient(UploadThingStorage.HttpClientName, client =>
 {
-    var environment = sp.GetRequiredService<IWebHostEnvironment>();
-    return environment.IsDevelopment()
-        ? sp.GetRequiredService<LocalFileStorage>()
-        : sp.GetRequiredService<UploadThingStorage>();
+    client.BaseAddress = new Uri("https://api.uploadthing.com");
+    client.Timeout = TimeSpan.FromMinutes(10);
 });
+
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+else
+    builder.Services.AddScoped<IFileStorage, UploadThingStorage>();
 
 // The wwwroot folder is git-ignored, so ensure it exists up front. This guarantees
 // Development uploads (LocalFileStorage) and static file serving work on a fresh clone.
