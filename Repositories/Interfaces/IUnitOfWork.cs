@@ -1,6 +1,7 @@
 ﻿using BlogGraphQlApp.Core.Repositories;
 using BlogGraphQlApp.Entities;
 using BlogGraphQlApp.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BlogGraphQlApp.Repositories.Interfaces
 {
@@ -30,6 +31,10 @@ namespace BlogGraphQlApp.Repositories.Interfaces
         IRepository<GroupVideoCallParticipant> GroupVideoCallParticipants { get; }
         IRepository<CallHistory> CallHistories { get; }
         IRepository<GroupCallParticipantHistory> GroupCallParticipantHistories { get; }
+        IRepository<GroupMessageMention> GroupMessageMentions { get; }
+        IRepository<GroupMessageRead> GroupMessageReads { get; }
+        IRepository<GroupJoinRequest> GroupJoinRequests { get; }
+        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
         Task<int> CompleteAsync(CancellationToken cancellationToken = default);
     }
 }

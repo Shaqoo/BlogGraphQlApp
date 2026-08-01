@@ -5,6 +5,7 @@ using BlogGraphQlApp.Infrastructure.Repositories;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BlogGraphQlApp.Infrastructure
 {
@@ -48,6 +49,12 @@ namespace BlogGraphQlApp.Infrastructure
 
         public IRepository<GroupCallParticipantHistory> GroupCallParticipantHistories { get; }
 
+        public IRepository<GroupMessageMention> GroupMessageMentions { get; }
+
+        public IRepository<GroupMessageRead> GroupMessageReads { get; }
+
+        public IRepository<GroupJoinRequest> GroupJoinRequests { get; }
+
         public UnitOfWork(IDbContextFactory<AppDbContext> factory)
         {
             _context = factory.CreateDbContext();
@@ -75,7 +82,13 @@ namespace BlogGraphQlApp.Infrastructure
             GroupVideoCallParticipants = new Repository<GroupVideoCallParticipant>(_context);
             CallHistories = new Repository<CallHistory>(_context);
             GroupCallParticipantHistories = new Repository<GroupCallParticipantHistory>(_context);
+            GroupMessageMentions = new Repository<GroupMessageMention>(_context);
+            GroupMessageReads = new Repository<GroupMessageRead>(_context);
+            GroupJoinRequests = new Repository<GroupJoinRequest>(_context);
         }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+            => await _context.Database.BeginTransactionAsync(cancellationToken);
 
         public async Task<int> CompleteAsync(CancellationToken cancellationToken = default)
         {
