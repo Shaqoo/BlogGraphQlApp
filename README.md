@@ -180,6 +180,13 @@ subscription {
 }
 ```
 
+### Error handling
+
+A global `IErrorFilter` (`GraphQL/Errors/GraphQLErrorFilter.cs`) converts every exception that escapes a resolver or mutation into a client-safe GraphQL error:
+
+- `GraphQLException` and `InvalidFileException` surface their intended messages (invalid uploads return a `VALIDATION_ERROR`).
+- Any other exception is logged server-side and reported as an `INTERNAL_SERVER_ERROR` so internal details never leak to clients.
+
 ### Real-time presence
 
 A SignalR hub at `/hubs/presence` tracks online users. Connect with the JWT in the `access_token` query string; the server broadcasts `UserOnline`, `UserOffline` and `LastSeen` events.

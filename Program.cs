@@ -5,6 +5,7 @@ using BlogGraphQlApp.Data;
 using BlogGraphQlApp.Extensions.Migration;
 using BlogGraphQlApp.External;
 using BlogGraphQlApp.GraphQL.DataLoaders;
+using BlogGraphQlApp.GraphQL.Errors;
 using BlogGraphQlApp.GraphQL.Mutations;
 using BlogGraphQlApp.GraphQL.Queries;
 using BlogGraphQlApp.GraphQL.Subscriptions;
@@ -109,9 +110,9 @@ builder.Services.AddHttpClient(UploadThingStorage.HttpClientName, client =>
 });
 
 if (builder.Environment.IsDevelopment())
-    builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+    builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 else
-    builder.Services.AddScoped<IFileStorage, UploadThingStorage>();
+    builder.Services.AddSingleton<IFileStorage, UploadThingStorage>();
 
 // The wwwroot folder is git-ignored, so ensure it exists up front. This guarantees
 // Development uploads (LocalFileStorage) and static file serving work on a fresh clone.
@@ -200,6 +201,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services
     .AddGraphQLServer()
+    .AddErrorFilter<GraphQLErrorFilter>()
     .ModifyCostOptions(opt =>
     {
         opt.MaxFieldCost = 2000;
