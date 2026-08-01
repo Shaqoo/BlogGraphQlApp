@@ -5,6 +5,8 @@ namespace BlogGraphQlApp.Enums
         Text = 1,
         Audio,                  
         Image,
-        Document
+        Document,
+        Video,
+        System
     }
 }

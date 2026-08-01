@@ -8,5 +8,14 @@
         MentionsSaved,
         NewFollower,
         InvalidMentions,
+        GroupMemberAdded,
+        GroupMention,
+        GroupReply,
+        GroupReaction,
+        GroupCallStarted,
+        GroupCallMissed,
+        GroupUpdated,
+        GroupRoleChanged,
+        GroupInvite,
     }
 }
