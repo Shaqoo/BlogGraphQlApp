@@ -1,4 +1,5 @@
-﻿using BlogGraphQlApp.Models;
+﻿using BlogGraphQlApp.Entities;
+using BlogGraphQlApp.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,6 +14,9 @@ namespace BlogGraphQlApp.Data.Configurations
             builder.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(r => r.Post).WithMany(p => p.Reactions).HasForeignKey(r => r.PostId).OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(r => r.Reel).WithMany(re => re.Reactions).HasForeignKey(r => r.ReelId).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(r => r.GroupMessage).WithMany(gm => gm.Reactions).HasForeignKey(r => r.GroupMessageId).OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(r => r.GroupMessageId);
+            builder.HasIndex(r => new { r.GroupMessageId, r.UserId }).IsUnique();
         }
     }
 }

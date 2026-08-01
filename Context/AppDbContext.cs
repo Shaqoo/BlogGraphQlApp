@@ -33,6 +33,9 @@ namespace BlogGraphQlApp.Data
         public DbSet<GroupVideoCallParticipant> GroupVideoCallParticipants => Set<GroupVideoCallParticipant>();
         public DbSet<CallHistory> CallHistories => Set<CallHistory>();
         public DbSet<GroupCallParticipantHistory> GroupCallParticipantHistories => Set<GroupCallParticipantHistory>();
+        public DbSet<GroupMessageMention> GroupMessageMentions => Set<GroupMessageMention>();
+        public DbSet<GroupMessageRead> GroupMessageReads => Set<GroupMessageRead>();
+        public DbSet<GroupJoinRequest> GroupJoinRequests => Set<GroupJoinRequest>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
