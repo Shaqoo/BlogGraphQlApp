@@ -15,6 +15,9 @@ namespace BlogGraphQlApp.GraphQL.Types
             descriptor.Field(n => n.IsRead);
             descriptor.Field(n => n.ReadAt).Type<DateTimeType>();
             descriptor.Field(n => n.CreatedAt).Type<NonNullType<DateTimeType>>();
+            descriptor.Field(n => n.RelatedEntityId).Type<IdType>().Description("The entity this notification references, if any.");
+            descriptor.Field(n => n.RelatedEntityType).Description("Type discriminator of the related entity.");
+            descriptor.Field(n => n.Metadata).Description("Structured JSON metadata for the notification payload.");
         }
     }
 }

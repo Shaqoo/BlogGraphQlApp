@@ -7,6 +7,8 @@
         public Guid? ReelId { get; set; }
         public Guid? MessageId { get; set; }
         public Guid? ConversationId { get; set; }
+        public Guid? GroupMessageId { get; set; }
+        public Guid? GroupId { get; set; }
         public Guid UserId { get; set; }
         public string FullName { get; set; } = default!;
     }
