@@ -12,6 +12,10 @@ namespace BlogGraphQlApp.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_GroupMessages_ChatGroups_GroupId",
+                table: "GroupMessages");
+
             migrationBuilder.DropIndex(
                 name: "IX_GroupMessages_GroupId",
                 table: "GroupMessages");
@@ -387,6 +391,14 @@ namespace BlogGraphQlApp.Migrations
                 table: "GroupMessages",
                 column: "ReplyToMessageId");
 
+            migrationBuilder.AddForeignKey(
+                name: "FK_GroupMessages_ChatGroups_GroupId",
+                table: "GroupMessages",
+                column: "GroupId",
+                principalTable: "ChatGroups",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
             migrationBuilder.CreateIndex(
                 name: "IX_ChatGroups_InviteCode",
                 table: "ChatGroups",
@@ -468,6 +480,10 @@ namespace BlogGraphQlApp.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_ChatGroups_GroupMessages_LastMessageId",
                 table: "ChatGroups");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_GroupMessages_ChatGroups_GroupId",
+                table: "GroupMessages");
 
             migrationBuilder.DropForeignKey(
                 name: "FK_GroupMessages_GroupMessages_ReplyToMessageId",
@@ -672,6 +688,14 @@ namespace BlogGraphQlApp.Migrations
                 name: "IX_GroupMessages_GroupId",
                 table: "GroupMessages",
                 column: "GroupId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_GroupMessages_ChatGroups_GroupId",
+                table: "GroupMessages",
+                column: "GroupId",
+                principalTable: "ChatGroups",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
         }
     }
 }
