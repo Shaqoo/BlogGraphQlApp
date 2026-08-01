@@ -24,6 +24,15 @@ namespace BlogGraphQlApp.Data
         public DbSet<PostHashtag> PostHashtags => Set<PostHashtag>();
         public DbSet<Hashtag> Hashtags => Set<Hashtag>();
         public DbSet<PostMention> PostMentions => Set<PostMention>();
+        public DbSet<UserWebPushSubscription> WebPushSubscriptions => Set<UserWebPushSubscription>();
+        public DbSet<ActiveVideoCall> ActiveVideoCalls => Set<ActiveVideoCall>();
+        public DbSet<ChatGroup> ChatGroups => Set<ChatGroup>();
+        public DbSet<ChatGroupMember> ChatGroupMembers => Set<ChatGroupMember>();
+        public DbSet<GroupMessage> GroupMessages => Set<GroupMessage>();
+        public DbSet<GroupVideoCall> GroupVideoCalls => Set<GroupVideoCall>();
+        public DbSet<GroupVideoCallParticipant> GroupVideoCallParticipants => Set<GroupVideoCallParticipant>();
+        public DbSet<CallHistory> CallHistories => Set<CallHistory>();
+        public DbSet<GroupCallParticipantHistory> GroupCallParticipantHistories => Set<GroupCallParticipantHistory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

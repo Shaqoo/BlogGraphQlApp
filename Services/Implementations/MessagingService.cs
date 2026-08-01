@@ -15,16 +15,14 @@ namespace BlogGraphQlApp.Infrastructure.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthService _authService;
-        private readonly IAgoraService _agoraService;
         private readonly IFileStorage _fileStorage;
         private readonly IMapper _mapper;
         private readonly ILogger<MessagingService> _logger;
 
-        public MessagingService(IUnitOfWork unitOfWork, IAuthService authService, IAgoraService agoraService, IFileStorage fileStorage, IMapper mapper, ILogger<MessagingService> logger)
+        public MessagingService(IUnitOfWork unitOfWork, IAuthService authService, IFileStorage fileStorage, IMapper mapper, ILogger<MessagingService> logger)
         {
             _unitOfWork = unitOfWork;
             _authService = authService;
-            _agoraService = agoraService;
             _fileStorage = fileStorage;
             _mapper = mapper;
             _logger = logger;
@@ -90,35 +88,6 @@ namespace BlogGraphQlApp.Infrastructure.Services
             messageDto.Sender = currentUserResponse.Data;
 
             return ApiResponse<MessageDto>.Success(messageDto, "Message sent.");
-        }
-
-        public async Task<ApiResponse<AgoraTokenDto>> GenerateVideoCallTokensAsync(Guid toUserId)
-        {
-            var currentUserResponse = await _authService.GetCurrentUserAsync();
-            if (!currentUserResponse.Succeeded || currentUserResponse.Data == null)
-                return ApiResponse<AgoraTokenDto>.Fail("User not authenticated.");
-
-            var fromUserId = currentUserResponse.Data.Id;
-
-            if (!await CanMessageUserAsync(fromUserId, toUserId))
-                return ApiResponse<AgoraTokenDto>.Fail("You can only call users you are following.");
-
-            // A unique channel name for the call between two users.
-            var channelName = GetChannelName(fromUserId, toUserId);
-            
-            // In Agora, UIDs must be 32-bit unsigned integers. We can't use GUIDs directly.
-            // A simple hash is not guaranteed to be unique, but for this scope it's a pragmatic approach.
-            // For production, you might map GUIDs to integer UIDs in your database.
-            var userUid = (uint)fromUserId.GetHashCode();
-
-            var token = _agoraService.GenerateRtcToken(channelName, userUid);
-
-            _logger.LogInformation("Generated RTC token for user {UserId} for channel {ChannelName}", fromUserId, channelName);
-
-            // Here you would typically send a notification to the `toUserId` with the channel name
-            // so they can join. This can be done via your NotificationService or a push notification.
-
-            return ApiResponse<AgoraTokenDto>.Success(new AgoraTokenDto { Token = token, ChannelName = channelName });
         }
 
         public async Task<ApiResponse<IQueryable<ConversationDto>>> GetConversationsAsync()
@@ -204,14 +173,6 @@ namespace BlogGraphQlApp.Infrastructure.Services
                 await _unitOfWork.CompleteAsync();
             }
             return conversation;
-        }
-
-        private static string GetChannelName(Guid userId1, Guid userId2)
-        {
-            // Create a consistent, unique channel name for any pair of users.
-            return string.Compare(userId1.ToString(), userId2.ToString(), StringComparison.Ordinal) < 0
-                ? $"{userId1}_{userId2}"
-                : $"{userId2}_{userId1}";
         }
 
         public async Task<ApiResponse<bool>> MarkAsReadAsync(Guid messageId)

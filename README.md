@@ -9,7 +9,7 @@ The GraphQL endpoint exposes the full API. In development it runs with local fil
 - **Posts & reels** — text, image and video posts plus short-video reels; view/share counters, hashtag extraction and `@mentions` (with automatic notifications).
 - **Reactions & replies** — react to posts, reels, replies and messages; nested reply threads.
 - **Social graph** — follow/unfollow, followers/following lists, presence (online/offline, last seen) via SignalR.
-- **Messaging** — direct messages with file/image attachments, reply-to-message, typing indicators, recording indicators, read receipts and Agora video-call token generation.
+- **Messaging** — direct messages with file/image attachments, reply-to-message, typing indicators, recording indicators and read receipts.
 - **Notifications** — in-app notifications with read/unread state, pushed in real time over GraphQL subscriptions.
 - **AI** — caption generation, an assistant chat, content moderation, and auto-generated avatars from initials.
 - **Recommendations** — ML-based post/reel/user recommendations and user interactions tracking.
@@ -96,7 +96,6 @@ All settings follow the `Section__Key` convention (e.g. `Jwt__Key` → `Jwt:Key`
 | `OpenAI__ApiKey` | OpenAI API key (startup requires it) |
 | `UploadThing__Secret` / `UploadThing__AppId` | UploadThing credentials (Production only) |
 | `Pinecone__*` | Pinecone API key, environment, index and project |
-| `Agora__*` | Optional Agora app id/certificate |
 | `Storage__Validation__*` | Upload size limits (bytes) per file category |
 
 ## File storage

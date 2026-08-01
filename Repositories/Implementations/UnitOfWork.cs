@@ -30,6 +30,24 @@ namespace BlogGraphQlApp.Infrastructure
 
         public IRepository<AiUsage> AiUsages { get; }
 
+        public IRepository<UserWebPushSubscription> WebPushSubscriptions { get; }
+
+        public IRepository<ActiveVideoCall> ActiveVideoCalls { get; }
+
+        public IRepository<ChatGroup> ChatGroups { get; }
+
+        public IRepository<ChatGroupMember> ChatGroupMembers { get; }
+
+        public IRepository<GroupMessage> GroupMessages { get; }
+
+        public IRepository<GroupVideoCall> GroupVideoCalls { get; }
+
+        public IRepository<GroupVideoCallParticipant> GroupVideoCallParticipants { get; }
+
+        public IRepository<CallHistory> CallHistories { get; }
+
+        public IRepository<GroupCallParticipantHistory> GroupCallParticipantHistories { get; }
+
         public UnitOfWork(IDbContextFactory<AppDbContext> factory)
         {
             _context = factory.CreateDbContext();
@@ -48,11 +66,20 @@ namespace BlogGraphQlApp.Infrastructure
             PostHashtags = new Repository<PostHashtag>(_context);
             AiUsages = new Repository<AiUsage>(_context);
             ModerationResults = new Repository<ModerationResult>(_context);
+            WebPushSubscriptions = new Repository<UserWebPushSubscription>(_context);
+            ActiveVideoCalls = new Repository<ActiveVideoCall>(_context);
+            ChatGroups = new Repository<ChatGroup>(_context);
+            ChatGroupMembers = new Repository<ChatGroupMember>(_context);
+            GroupMessages = new Repository<GroupMessage>(_context);
+            GroupVideoCalls = new Repository<GroupVideoCall>(_context);
+            GroupVideoCallParticipants = new Repository<GroupVideoCallParticipant>(_context);
+            CallHistories = new Repository<CallHistory>(_context);
+            GroupCallParticipantHistories = new Repository<GroupCallParticipantHistory>(_context);
         }
 
-        public async Task<int> CompleteAsync()
+        public async Task<int> CompleteAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync(cancellationToken);
         }
 
         public void Dispose()

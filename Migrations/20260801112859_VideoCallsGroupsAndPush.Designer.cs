@@ -3,6 +3,7 @@ using System;
 using BlogGraphQlApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlogGraphQlApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260801112859_VideoCallsGroupsAndPush")]
+    partial class VideoCallsGroupsAndPush
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -109,78 +112,6 @@ namespace BlogGraphQlApp.Migrations
                     b.ToTable("AiUsages", (string)null);
                 });
 
-            modelBuilder.Entity("BlogGraphQlApp.Entities.CallHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime?>("AnsweredAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("CallId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("CallType")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("CallerId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("DurationSeconds")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("EndedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("EndedByUserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("GroupId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<Guid?>("RecipientId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("RoomName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CallId")
-                        .IsUnique();
-
-                    b.HasIndex("CallerId");
-
-                    b.HasIndex("EndedByUserId");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("RecipientId");
-
-                    b.HasIndex("StartedAt");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("CallHistories");
-                });
-
             modelBuilder.Entity("BlogGraphQlApp.Entities.ChatGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -251,45 +182,6 @@ namespace BlogGraphQlApp.Migrations
                         .IsUnique();
 
                     b.ToTable("ChatGroupMembers");
-                });
-
-            modelBuilder.Entity("BlogGraphQlApp.Entities.GroupCallParticipantHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("CallHistoryId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("DurationSeconds")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<DateTime?>("JoinedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("LeftAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CallHistoryId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("GroupCallParticipantHistories");
                 });
 
             modelBuilder.Entity("BlogGraphQlApp.Entities.GroupMessage", b =>
@@ -1084,38 +976,6 @@ namespace BlogGraphQlApp.Migrations
                     b.Navigation("Recipient");
                 });
 
-            modelBuilder.Entity("BlogGraphQlApp.Entities.CallHistory", b =>
-                {
-                    b.HasOne("BlogGraphQlApp.Models.User", "Caller")
-                        .WithMany()
-                        .HasForeignKey("CallerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BlogGraphQlApp.Models.User", "EndedByUser")
-                        .WithMany()
-                        .HasForeignKey("EndedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BlogGraphQlApp.Entities.ChatGroup", "Group")
-                        .WithMany()
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BlogGraphQlApp.Models.User", "Recipient")
-                        .WithMany()
-                        .HasForeignKey("RecipientId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Caller");
-
-                    b.Navigation("EndedByUser");
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Recipient");
-                });
-
             modelBuilder.Entity("BlogGraphQlApp.Entities.ChatGroup", b =>
                 {
                     b.HasOne("BlogGraphQlApp.Models.User", "CreatedByUser")
@@ -1142,25 +1002,6 @@ namespace BlogGraphQlApp.Migrations
                         .IsRequired();
 
                     b.Navigation("Group");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BlogGraphQlApp.Entities.GroupCallParticipantHistory", b =>
-                {
-                    b.HasOne("BlogGraphQlApp.Entities.CallHistory", "CallHistory")
-                        .WithMany("Participants")
-                        .HasForeignKey("CallHistoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BlogGraphQlApp.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CallHistory");
 
                     b.Navigation("User");
                 });
@@ -1459,11 +1300,6 @@ namespace BlogGraphQlApp.Migrations
                         .HasForeignKey("ParticipantsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("BlogGraphQlApp.Entities.CallHistory", b =>
-                {
-                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("BlogGraphQlApp.Entities.ChatGroup", b =>

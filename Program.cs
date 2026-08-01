@@ -2,6 +2,7 @@ using BlogGraphQlApp.BackgroundServices;
 using BlogGraphQlApp.Config;
 using BlogGraphQlApp.Core.Interfaces;
 using BlogGraphQlApp.Data;
+using BlogGraphQlApp.Endpoints;
 using BlogGraphQlApp.Extensions.Migration;
 using BlogGraphQlApp.External;
 using BlogGraphQlApp.GraphQL.DataLoaders;
@@ -15,8 +16,13 @@ using BlogGraphQlApp.Infrastructure;
 using BlogGraphQlApp.Infrastructure.Services;
 using BlogGraphQlApp.Repositories.Implementations;
 using BlogGraphQlApp.Repositories.Interfaces;
+using BlogGraphQlApp.Services.History;
+using BlogGraphQlApp.Services.Daily;
+using BlogGraphQlApp.Services.Groups;
 using BlogGraphQlApp.Services.Implementations;
 using BlogGraphQlApp.Services.Interfaces;
+using BlogGraphQlApp.Services.Push;
+using BlogGraphQlApp.Services.Video;
 using BlogGraphQlApp.Settings;
 using BlogGraphQlApp.Storage;
 using Microsoft.Extensions.FileProviders;
@@ -49,8 +55,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection(EmailSettings.SectionName));
 
-builder.Services.Configure<AgoraSettings>(
-    builder.Configuration.GetSection(AgoraSettings.SectionName));
+// Daily.co video calls and web push notifications are configured via the
+// Daily and WebPush sections. The Daily API key is a secret: only set it
+// through the .env file or environment variables, never commit it.
+builder.Services.Configure<DailySettings>(
+    builder.Configuration.GetSection(DailySettings.SectionName));
+
+builder.Services.Configure<VapidSettings>(
+    builder.Configuration.GetSection(VapidSettings.SectionName));
 
 builder.Services.Configure<SpotifySettings>(
     builder.Configuration.GetSection(SpotifySettings.SectionName));
@@ -78,7 +90,6 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     .AddScoped<IUserInteractionService, UserInteractionService>()
     .AddScoped<IRecommendationService, RecommendationService>()
     .AddScoped<IUserFollowService, UserFollowService>()
-    .AddScoped<IAgoraService, AgoraService>()
     .AddScoped<IMessagingService, MessagingService>()
     .AddScoped<IAuthService, AuthService>()
     .AddSingleton<IAvatarGeneratorService,AvatarGeneratorService>()
@@ -95,6 +106,18 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     .AddSingleton<ContentVectorService>()
     .AddHostedService<VectorizationBackgroundService>()
     .AddHostedService<AIUsageResetService>();
+
+// Real-time video calls (Daily.co), web push notifications and group chat.
+// DailyCallService talks to the Daily REST API as a typed HttpClient; all
+// other call/group services are scoped and share the unit of work.
+builder.Services.AddHttpClient<IDailyCallService, DailyCallService>();
+builder.Services.AddScoped<IWebPushService, WebPushService>();
+builder.Services.AddScoped<IVideoCallService, VideoCallService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IGroupCallService, GroupCallService>();
+builder.Services.AddScoped<ICallHistoryService, CallHistoryService>();
+builder.Services.AddScoped<DailyWebhookService>();
+builder.Services.AddHostedService<DailyRoomCleanupService>();
 
 // File storage is selected based on the runtime environment.
 // - Development: files are stored under wwwroot/uploads and served locally.
@@ -219,7 +242,9 @@ builder.Services
         .AddTypeExtension<MessagingQueries>()
         .AddTypeExtension<MusicQueries>()
         .AddTypeExtension<AiQueries>()
-        .AddTypeExtension<ReactionQueries>() 
+        .AddTypeExtension<ReactionQueries>()
+        .AddTypeExtension<VideoCallQueries>()
+        .AddTypeExtension<GroupQueries>()
     .AddMutationType(d => d.Name("Mutation"))
         .AddTypeExtension<AuthMutation>()
         .AddTypeExtension<UserMutation>()
@@ -231,9 +256,14 @@ builder.Services
         .AddTypeExtension<NotificationMutation>()
         .AddTypeExtension<UserFollowMutation>()
         .AddTypeExtension<MessagingMutation>()
+        .AddTypeExtension<VideoCallMutations>()
+        .AddTypeExtension<WebPushMutations>()
+        .AddTypeExtension<GroupMutations>()
+        .AddTypeExtension<GroupCallMutations>()
     .AddSubscriptionType(d => d.Name("Subscription"))
         .AddTypeExtension<MessagingSubscription>()
         .AddTypeExtension<ReactionSubscription>()
+        .AddTypeExtension<CallSubscription>()
     .AddType<UserType>()
     .AddType<ReelType>()
     .AddType<PostType>()
@@ -241,6 +271,11 @@ builder.Services
     .AddType<ReplyType>()
     .AddType<NotificationTypeGql>()
     .AddType<UploadType>()
+    .AddType<VideoCallTypeGql>()
+    .AddType<GroupTypeGql>()
+    .AddType<GroupMemberTypeGql>()
+    .AddType<GroupMessageTypeGql>()
+    .AddType<GroupCallTypeGql>()
     .AddProjections()
     .AddFiltering()
     .AddSorting()
@@ -285,4 +320,6 @@ app.MapGraphQL("/gql").WithOptions(new GraphQLServerOptions
 app.Services.ApplyMigrationAsync().GetAwaiter().GetResult();
 
 app.MapHub<PresenceHub>("/hubs/presence");
+app.MapDailyWebhook();
+app.MapCallHistoryEndpoints();
 app.Run();

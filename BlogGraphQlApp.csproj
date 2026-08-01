@@ -7,9 +7,6 @@
   <ItemGroup>
     <PackageReference Include="Accord.Video.FFMPEG" Version="3.8.0" />
     <PackageReference Include="Accord.Video.FFMPEG.x64" Version="3.8.0" />
-    <PackageReference Include="Agora-Token-Generator" Version="1.0.1" />
-    <PackageReference Include="agora_rtc_sdk" Version="4.2.6.19-alpha.1" />
-    <PackageReference Include="agora_rtc_sdk_test" Version="3.2.1.10" />
     <PackageReference Include="AppAny.HotChocolate.FluentValidation" Version="0.12.0" />
     <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
@@ -46,21 +43,18 @@
     <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
     <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+    <PackageReference Include="WebPush" Version="1.0.13" />
     <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
     <PackageReference Include="Xabe.FFmpeg.Downloader" Version="6.0.2" />
   </ItemGroup>
-  <Target Name="ExcludeConflictingNativeLibrariesFromPublish"
-          AfterTargets="ComputeFilesToPublish"
-          BeforeTargets="_HandleFileConflictsForPublish">
-    <!-- Native packages (agora_rtc_sdk, Accord.Video.FFMPEG(.x64)) ship x86/x64
-         binaries with flat Link names, so `dotnet publish` fails with NETSDK1152
-         (duplicate publish output paths). These DLLs are not loaded by this app
-         (Agora token generation is stubbed; the ffmpeg video pipeline uses the
+  <Target Name="ExcludeConflictingNativeLibrariesFromPublish" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
+    <!-- Accord.Video.FFMPEG(.x64) ships x86/x64 binaries with flat Link names, so
+         `dotnet publish` fails with NETSDK1152 (duplicate publish output paths).
+         The DLLs are not loaded by this app (the ffmpeg video pipeline uses the
          system ffmpeg binary via Xabe.FFmpeg), so exclude them from publish.
          `dotnet run`/build (which copies them to bin/) is unaffected. -->
     <ItemGroup>
-      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
-                             Condition="$([System.String]::Copy('%(ResolvedFileToPublish.SourcePath)').Contains('\agora_rtc_sdk\')) or $([System.String]::Copy('%(ResolvedFileToPublish.SourcePath)').Contains('\accord.video.ffmpeg\'))" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.String]::Copy('%(ResolvedFileToPublish.SourcePath)').Contains('\accord.video.ffmpeg\'))" />
     </ItemGroup>
   </Target>
 </Project>

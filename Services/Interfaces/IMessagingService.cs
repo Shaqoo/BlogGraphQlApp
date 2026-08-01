@@ -14,7 +14,6 @@ namespace BlogGraphQlApp.Core.Interfaces
         Task<ApiResponse<bool>> MarkAllAsReadAsync(Guid conversationId);
         Task<ApiResponse<IQueryable<ConversationDto>>> GetConversationsAsync();
         Task<ApiResponse<IQueryable<MessageDto>>> GetMessagesAsync(Guid conversationId);
-        Task<ApiResponse<AgoraTokenDto>> GenerateVideoCallTokensAsync(Guid toUserId);
         Task<bool> CanMessageUserAsync(Guid fromUserId, Guid toUserId);
     }
 }

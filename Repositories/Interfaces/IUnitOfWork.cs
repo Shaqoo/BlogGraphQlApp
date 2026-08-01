@@ -21,6 +21,15 @@ namespace BlogGraphQlApp.Repositories.Interfaces
         IRepository<PostHashtag> PostHashtags { get; }
         IRepository<ModerationResult> ModerationResults { get; }
         IRepository<AiUsage> AiUsages { get; }
-        Task<int> CompleteAsync();
+        IRepository<UserWebPushSubscription> WebPushSubscriptions { get; }
+        IRepository<ActiveVideoCall> ActiveVideoCalls { get; }
+        IRepository<ChatGroup> ChatGroups { get; }
+        IRepository<ChatGroupMember> ChatGroupMembers { get; }
+        IRepository<GroupMessage> GroupMessages { get; }
+        IRepository<GroupVideoCall> GroupVideoCalls { get; }
+        IRepository<GroupVideoCallParticipant> GroupVideoCallParticipants { get; }
+        IRepository<CallHistory> CallHistories { get; }
+        IRepository<GroupCallParticipantHistory> GroupCallParticipantHistories { get; }
+        Task<int> CompleteAsync(CancellationToken cancellationToken = default);
     }
 }

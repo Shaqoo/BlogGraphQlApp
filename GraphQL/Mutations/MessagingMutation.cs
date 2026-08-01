@@ -13,7 +13,6 @@ namespace BlogGraphQlApp.GraphQL.Mutations
     public class MessagingMutation
     {
         public record SendMessageInput(Guid ToUserId, MessageType MessageType, string? Content, IFile? file, Guid? ReplyToMessageId);
-        public record StartVideoCallInput(Guid ToUserId);
 
         [Authorize]
         [GraphQLDescription("Sends a message to another user. Can be text or an audio file.")]
@@ -39,18 +38,6 @@ namespace BlogGraphQlApp.GraphQL.Mutations
             }
 
             return response;
-        }
-
-        [Authorize]
-        [GraphQLDescription("Generates an Agora RTC token to initiate a video call with another user.")]
-        public async Task<ApiResponse<AgoraTokenDto>> StartVideoCallAsync(
-            StartVideoCallInput input,
-            [Service] IMessagingService messagingService)
-        {
-            // This mutation returns a token and channel name for the CALLER.
-            // You should also trigger a notification to the CALLEE with the channel name
-            // so they can generate their own token and join the call.
-            return await messagingService.GenerateVideoCallTokensAsync(input.ToUserId);
         }
 
         public async Task<TypingEvent> SendTyping(Guid conversationId, Guid userId, string name, bool isTyping, [Service] ITopicEventSender eventSender)
