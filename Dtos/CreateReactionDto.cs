@@ -10,5 +10,6 @@ namespace BlogGraphQlApp.DTOs
         public Guid? ReelId { get; set; }
         public Guid? MessageId { get; set; }
         public Guid? ReplyId { get; set; }
+        public Guid? GroupMessageId { get; set; }
     }
 }

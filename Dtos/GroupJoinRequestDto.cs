@@ -1,6 +1,8 @@
+using BlogGraphQlApp.Enums;
+
 namespace BlogGraphQlApp.DTOs
 {
-    public class GroupMemberDto
+    public class GroupJoinRequestDto
     {
         public Guid Id { get; set; }
         public Guid GroupId { get; set; }
@@ -8,9 +10,7 @@ namespace BlogGraphQlApp.DTOs
         public string Username { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? Avatar { get; set; }
-        public string Role { get; set; } = string.Empty;
-        public DateTime JoinedAt { get; set; }
-        public bool Online { get; set; }
-        public DateTime? LastSeen { get; set; }
+        public JoinRequestStatus Status { get; set; }
+        public DateTime RequestedAt { get; set; }
     }
 }

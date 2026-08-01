@@ -13,6 +13,7 @@ namespace BlogGraphQlApp.DTOs
         public Guid StartedBy { get; set; }
         public string StartedByName { get; set; } = string.Empty;
         public GroupCallStatus Status { get; set; }
+        public CallMediaType MediaType { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? EndedAt { get; set; }
     }

@@ -10,5 +10,8 @@ namespace BlogGraphQlApp.DTOs
         public bool IsRead { get; set; }
         public DateTime? ReadAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public Guid? RelatedEntityId { get; set; }
+        public int RelatedEntityType { get; set; }
+        public string? Metadata { get; set; }
     }
 }
