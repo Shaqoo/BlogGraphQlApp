@@ -45,15 +45,27 @@ namespace BlogGraphQlApp.GraphQL.Queries
         }
 
         [Authorize]
-        [GraphQLDescription("Gets the messages of a group the current user belongs to.")]
-        public async Task<ApiResponse<IEnumerable<GroupMessageDto>>> GetGroupMessagesAsync(
+        [GraphQLDescription("Gets the invite code for a group (admins and owner only).")]
+        public async Task<ApiResponse<string>> GetGroupInviteCodeAsync(
             Guid groupId,
             ClaimsPrincipal claimsPrincipal,
             [Service] IGroupService groupService,
             CancellationToken cancellationToken)
         {
-            var userId = claimsPrincipal.GetUserId();
-            return await groupService.GetMessagesAsync(groupId, userId, cancellationToken);
+            var actorId = claimsPrincipal.GetUserId();
+            return await groupService.GetInviteCodeAsync(groupId, actorId, cancellationToken);
+        }
+
+        [Authorize]
+        [GraphQLDescription("Gets pending join requests for a private group (admins and owner only).")]
+        public async Task<ApiResponse<IEnumerable<GroupJoinRequestDto>>> GetPendingGroupJoinRequestsAsync(
+            Guid groupId,
+            ClaimsPrincipal claimsPrincipal,
+            [Service] IGroupService groupService,
+            CancellationToken cancellationToken)
+        {
+            var actorId = claimsPrincipal.GetUserId();
+            return await groupService.GetPendingJoinRequestsAsync(groupId, actorId, cancellationToken);
         }
 
         [Authorize]
