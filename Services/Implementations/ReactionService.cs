@@ -37,7 +37,8 @@ namespace BlogGraphQlApp.Infrastructure.Services
                     r.MessageId == createReactionDto.MessageId &&
                     r.PostId == createReactionDto.PostId &&
                     r.ReelId == createReactionDto.ReelId &&
-                    r.ReplyId == createReactionDto.ReplyId
+                    r.ReplyId == createReactionDto.ReplyId &&
+                    r.GroupMessageId == createReactionDto.GroupMessageId
                 )
                 .FirstOrDefaultAsync();
 
@@ -64,6 +65,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
                 ReelId = createReactionDto.ReelId,
                 PostId = createReactionDto.PostId,
                 ReplyId = createReactionDto.ReplyId,
+                GroupMessageId = createReactionDto.GroupMessageId,
                 Emoji = createReactionDto.Emoji,
                 UserId = currentUser.Data.Id
             };
@@ -125,6 +127,18 @@ namespace BlogGraphQlApp.Infrastructure.Services
             );
 
             _logger.LogInformation("IQueryable for PostId {PostId} created.", postId);
+
+            return Task.FromResult(query);
+        }
+
+        public Task<IQueryable<ReactionDto>> GetReactionsByGroupMessageIdAsync(Guid groupMessageId)
+        {
+            _logger.LogInformation("Building IQueryable for reactions by GroupMessageId: {GroupMessageId}", groupMessageId);
+
+            var query = _mapper.ProjectTo<ReactionDto>(
+                _unitOfWork.Reactions
+                    .Find(r => r.GroupMessageId == groupMessageId)
+            );
 
             return Task.FromResult(query);
         }

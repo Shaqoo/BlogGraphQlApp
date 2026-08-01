@@ -1,4 +1,4 @@
-﻿﻿using BlogGraphQlApp.Common;
+﻿using BlogGraphQlApp.Common;
 using BlogGraphQlApp.DTOs;
 
 namespace BlogGraphQlApp.Core.Interfaces
@@ -13,5 +13,6 @@ namespace BlogGraphQlApp.Core.Interfaces
         Task<ApiResponse<string>> GetUserReactionToPostAsync(Guid postId);
         Task<IQueryable<ReactionDto>> GetReactionsByReplyIdAsync(Guid replyId);
         Task<IQueryable<ReactionDto>> GetReactionsByPostIdAsync(Guid postId);
+        Task<IQueryable<ReactionDto>> GetReactionsByGroupMessageIdAsync(Guid groupMessageId);
     }
 }
