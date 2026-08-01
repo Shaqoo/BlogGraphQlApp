@@ -2,7 +2,10 @@
 using BlogGraphQlApp.Common;
 using BlogGraphQlApp.Core.Interfaces;
 using BlogGraphQlApp.DTOs;
+using BlogGraphQlApp.Entities;
+using BlogGraphQlApp.Enums;
 using BlogGraphQlApp.Repositories.Interfaces;
+using HotChocolate.Subscriptions;
 
 namespace BlogGraphQlApp.Infrastructure.Services
 {
@@ -12,13 +15,49 @@ namespace BlogGraphQlApp.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IAuthService _authService;
+        private readonly ITopicEventSender _eventSender;
 
-        public NotificationService(ILogger<NotificationService> logger, IUnitOfWork unitOfWork, IMapper mapper, IAuthService authService)
+        public NotificationService(ILogger<NotificationService> logger, IUnitOfWork unitOfWork, IMapper mapper, IAuthService authService, ITopicEventSender eventSender)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _authService = authService;
+            _eventSender = eventSender;
+        }
+
+        public async Task<NotificationDto> CreateAsync(
+            Guid userId,
+            NotificationType type,
+            string message,
+            Guid? relatedEntityId = null,
+            int relatedEntityType = 0,
+            string? metadata = null,
+            CancellationToken ct = default)
+        {
+            var notification = new Notification
+            {
+                UserId = userId,
+                NotificationType = type,
+                Message = message,
+                RelatedEntityId = relatedEntityId,
+                RelatedEntityType = relatedEntityType,
+                Metadata = metadata
+            };
+
+            await _unitOfWork.Notifications.AddAsync(notification);
+            await _unitOfWork.CompleteAsync(ct);
+
+            var dto = _mapper.Map<NotificationDto>(notification);
+            try
+            {
+                await _eventSender.SendAsync($"{userId}_User_NotificationReceived", dto, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to publish notification event for user {UserId}.", userId);
+            }
+            return dto;
         }
 
         public async Task<ApiResponse<NotificationDto?>> GetNotificationByIdAsync(Guid id)
