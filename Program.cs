@@ -336,4 +336,5 @@ app.Services.ApplyMigrationAsync().GetAwaiter().GetResult();
 app.MapHub<PresenceHub>("/hubs/presence");
 app.MapDailyWebhook();
 app.MapCallHistoryEndpoints();
+app.MapWebPushEndpoints();
 app.Run();
