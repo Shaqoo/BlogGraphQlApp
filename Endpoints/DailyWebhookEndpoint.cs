@@ -20,7 +20,7 @@ namespace BlogGraphQlApp.Endpoints
                 using var document = await JsonDocument.ParseAsync(http.Request.Body, cancellationToken: http.RequestAborted);
                 await webhook.HandleAsync(document.RootElement, http.RequestAborted);
                 return Results.Ok();
-            }).AllowAnonymous();
+            }).AllowAnonymous().DisableRateLimiting();
 
             return app;
         }

@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using BlogGraphQlApp.BackgroundServices;
 using BlogGraphQlApp.Config;
 using BlogGraphQlApp.Core.Interfaces;
@@ -71,6 +73,47 @@ builder.Services.Configure<GeminiSettings>(
     builder.Configuration.GetSection(GeminiSettings.SectionName));
 
 builder.Services.AddSignalR();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.Headers.RetryAfter = "60";
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { error = "Too many requests. Please slow down." }, token);
+    };
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        if (context.WebSockets.IsWebSocketRequest)
+            return RateLimitPartition.GetNoLimiter("websocket");
+
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAuthenticated = !string.IsNullOrEmpty(userId);
+        var key = isAuthenticated ? $"user:{userId}" : $"ip:{GetClientIp(context)}";
+
+        var limit = isAuthenticated ? 300
+            : context.Request.Path.StartsWithSegments("/gql") ? 10
+            : 100;
+
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = limit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+});
+
+static string GetClientIp(HttpContext context)
+{
+    var forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(forwarded))
+        return forwarded.Split(',')[0].Trim();
+    return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
 
 builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
@@ -327,6 +370,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 
 app.MapGraphQL("/gql").WithOptions(new GraphQLServerOptions
