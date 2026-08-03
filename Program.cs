@@ -314,6 +314,8 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
+app.UseMiddleware<BlogGraphQlApp.Middleware.SecurityHeadersMiddleware>();
+
 app.UseCors("AllowFrontend");
 
 app.UseWebSockets();
