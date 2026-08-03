@@ -30,14 +30,14 @@
 - Consumes: none.
 - Produces: a sanitized `appsettings.json` (no real secret values). Later tasks (history rewrite) rely on this sanitized file as the source of truth for the scrub.
 
-- [ ] **Step 1: Back up the current (secrets-bearing) appsettings.json to a non-repo path**
+- [x] **Step 1: Back up the current (secrets-bearing) appsettings.json to a non-repo path**
 
 ```bash
 cp appsettings.json /tmp/opencode/appsettings.live.bak.json
 echo "backup saved (do not commit this file)"
 ```
 
-- [ ] **Step 2: Replace every live secret value with a placeholder**
+- [x] **Step 2: Replace every live secret value with a placeholder**
 
 Edit `appsettings.json` so the following values become placeholders (keep JSON valid):
 
@@ -54,12 +54,12 @@ Edit `appsettings.json` so the following values become placeholders (keep JSON v
 
 Leave `Storage`, `Jwt` (already a placeholder), `Daily`/`WebPush` (already empty), `AllowedHosts` unchanged.
 
-- [ ] **Step 3: Confirm .env has every scrubbed key (values are there)**
+- [x] **Step 3: Confirm .env has every scrubbed key (values are there)**
 
 Run: `grep -cE "ConnectionStrings__DefaultConnection|EmailSettings__Password|SpotifySettings__ClientSecret|GeminiSettings__ApiKey|OpenAI__ApiKey|UploadThing__Secret|Pinecone__ApiKey" .env`
 Expected: `7` (all present). If any key is missing, add it from `/tmp/opencode/appsettings.live.bak.json` BEFORE continuing.
 
-- [ ] **Step 4: Build and start the app, confirm it still boots from .env**
+- [x] **Step 4: Build and start the app, confirm it still boots from .env**
 
 ```bash
 "/mnt/c/Program Files/dotnet/dotnet.exe" build BlogGraphQlApp.csproj -c Release --nologo -v q
@@ -72,13 +72,13 @@ curl -s http://192.168.192.1:5000/api/web-push/vapid-key
 ```
 Expected: the real VAPID public key (proves `.env` still overrides the sanitized appsettings).
 
-- [ ] **Step 5: Kill the app**
+- [x] **Step 5: Kill the app**
 
 ```bash
 # find the dotnet PID for BlogGraphQlApp.dll and kill it
 ```
 
-- [ ] **Step 6: Confirm the file stays local-only (gitignored)**
+- [x] **Step 6: Confirm the file stays local-only (gitignored)**
 
 `appsettings.json` is listed in `.gitignore` (line 367) and is untracked, so there is **nothing to commit** — the sanitized working copy is the end state.
 
@@ -98,7 +98,7 @@ git status --short appsettings.json   # expect: no output (ignored)
 - Consumes: nothing.
 - Produces: `SecurityHeadersMiddleware` (RequestDelegate wrapper) registered in `Program.cs` before `UseCors`.
 
-- [ ] **Step 1: Create `Middleware/SecurityHeadersMiddleware.cs`**
+- [x] **Step 1: Create `Middleware/SecurityHeadersMiddleware.cs`**
 
 ```csharp
 using Microsoft.Extensions.Primitives;
@@ -146,7 +146,7 @@ namespace BlogGraphQlApp.Middleware
 }
 ```
 
-- [ ] **Step 2: Register it in `Program.cs`**
+- [x] **Step 2: Register it in `Program.cs`**
 
 In `Program.cs`, immediately after `var app = builder.Build();` and before `app.UseCors("AllowFrontend");`:
 
@@ -154,21 +154,21 @@ In `Program.cs`, immediately after `var app = builder.Build();` and before `app.
 app.UseMiddleware<BlogGraphQlApp.Middleware.SecurityHeadersMiddleware>();
 ```
 
-- [ ] **Step 3: Build and start the app**
+- [x] **Step 3: Build and start the app**
 
 ```bash
 "/mnt/c/Program Files/dotnet/dotnet.exe" build BlogGraphQlApp.csproj -c Release --nologo -v q
 "/mnt/c/Program Files/dotnet/dotnet.exe" bin/Release/net8.0/BlogGraphQlApp.dll --urls http://0.0.0.0:5000 &
 ```
 
-- [ ] **Step 4: Verify headers on an API endpoint (HTTP)**
+- [x] **Step 4: Verify headers on an API endpoint (HTTP)**
 
 ```bash
 curl -sI http://192.168.192.1:5000/api/web-push/vapid-key
 ```
 Expected (all present): `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy: ...`, `Cross-Origin-Opener-Policy: same-origin`, `X-XSS-Protection: 0`, `Cache-Control: no-store`. **No** `Strict-Transport-Security` (request was HTTP).
 
-- [ ] **Step 5: Verify static files are unaffected**
+- [x] **Step 5: Verify static files are unaffected**
 
 Upload a small test file to `wwwroot/uploads/profiles/test_header.png`, then:
 ```bash
@@ -176,9 +176,9 @@ curl -sI http://192.168.192.1:5000/uploads/profiles/test_header.png
 ```
 Expected: **no** `Cache-Control: no-store` on the response.
 
-- [ ] **Step 6: Kill the app and remove the test file**
+- [x] **Step 6: Kill the app and remove the test file**
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add Middleware/SecurityHeadersMiddleware.cs Program.cs
@@ -197,7 +197,7 @@ git commit -m "feat: add security hardening headers middleware"
 - Consumes: `SecurityHeadersMiddleware` registration from Task 2 (unrelated, no conflict).
 - Produces: `GlobalLimiter` partitioned by `user:{id}` / `ip:{addr}`; `429` + `Retry-After` on rejection; webhook disabled.
 
-- [ ] **Step 1: Add the `using` and service registration in `Program.cs`**
+- [x] **Step 1: Add the `using` and service registration in `Program.cs`**
 
 Add near the other usings:
 ```csharp
@@ -252,7 +252,7 @@ static string GetClientIp(HttpContext context)
 
 Note: `context.User` is populated because `UseAuthentication()` runs before `UseRateLimiter()` (verified in Step 2).
 
-- [ ] **Step 2: Insert `UseRateLimiter` in the pipeline**
+- [x] **Step 2: Insert `UseRateLimiter` in the pipeline**
 
 In `Program.cs` after `app.UseAuthorization();` (line ~327) and before `app.UseHttpsRedirection();` add:
 
@@ -262,7 +262,7 @@ app.UseRateLimiter();
 
 Final order becomes: `UseCors` → `SecurityHeaders` (Task 2) → `UseWebSockets` → `UseStaticFiles` → `UseAuthentication` → `UseAuthorization` → `UseRateLimiter` → `UseHttpsRedirection` → endpoints.
 
-- [ ] **Step 3: Exempt the Daily webhook**
+- [x] **Step 3: Exempt the Daily webhook**
 
 In `Endpoints/DailyWebhookEndpoint.cs`, change the last line from `.AllowAnonymous();` to:
 
@@ -270,14 +270,14 @@ In `Endpoints/DailyWebhookEndpoint.cs`, change the last line from `.AllowAnonymo
 }).AllowAnonymous().DisableRateLimiting();
 ```
 
-- [ ] **Step 4: Build and start the app**
+- [x] **Step 4: Build and start the app**
 
 ```bash
 "/mnt/c/Program Files/dotnet/dotnet.exe" build BlogGraphQlApp.csproj -c Release --nologo -v q
 "/mnt/c/Program Files/dotnet/dotnet.exe" bin/Release/net8.0/BlogGraphQlApp.dll --urls http://0.0.0.0:5000 &
 ```
 
-- [ ] **Step 5: Verify the anonymous `/gql` limit (10/min) triggers 429**
+- [x] **Step 5: Verify the anonymous `/gql` limit (10/min) triggers 429**
 
 Run 15 rapid requests (loop is fine; a GraphQL query isn't needed to trip the limiter):
 ```bash
@@ -288,7 +288,7 @@ Expected: 10× `301` (HSTS/HTTPS redirect still applies) followed by 5× `429`. 
 curl -sI http://192.168.192.1:5000/gql | grep -i retry-after
 ```
 
-- [ ] **Step 6: Verify the webhook is exempt**
+- [x] **Step 6: Verify the webhook is exempt**
 
 Send 12 rapid `POST /api/daily/webhook` requests (empty body is fine — it returns 200 before parsing matters for rate limiting; if it errors on JSON parse, that is unrelated to the limiter):
 ```bash
@@ -296,9 +296,9 @@ for i in $(seq 1 12); do curl -s -o /dev/null -w "%{http_code}\n" -X POST http:/
 ```
 Expected: **no** 429 (all 200, or all identical non-429 codes if the empty body is rejected).
 
-- [ ] **Step 7: Kill the app**
+- [x] **Step 7: Kill the app**
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add Program.cs Endpoints/DailyWebhookEndpoint.cs
@@ -315,24 +315,24 @@ git commit -m "feat: add partitioned rate limiting, exempt webhook and websocket
 **Interfaces:**
 - Consumes: everything from Tasks 1–3 running.
 
-- [ ] **Step 1: Start the app**
+- [x] **Step 1: Start the app**
 
 ```bash
 "/mnt/c/Program Files/dotnet/dotnet.exe" bin/Release/net8.0/BlogGraphQlApp.dll --urls http://0.0.0.0:5000 &
 ```
 
-- [ ] **Step 2: Log in two users, subscribe and publish a group message over WebSocket**
+- [x] **Step 2: Log in two users, subscribe and publish a group message over WebSocket**
 
 Use the same two-account WS smoke test used previously for `groupMessageSent` (subscribe with the JWT in `connection_init` under `Authorization`, start a `createGroup` + `sendGroupMessage`, assert the event arrives). Confirm the JWT is passed via `connection_init` payload and that the connection is NOT rejected with `AUTH_NOT_AUTHENTICATED` and NOT rate-limited (this proves the WebSocket exemption works).
 
-- [ ] **Step 3: Confirm a logged-in user gets the 300/min bucket, not 10/min**
+- [x] **Step 3: Confirm a logged-in user gets the 300/min bucket, not 10/min**
 
 From the WS client (or a second GraphQL call using the JWT header), issue 20 authenticated `/gql` requests in quick succession.
 Expected: none return `429` (authenticated limit is 300/min).
 
-- [ ] **Step 4: Kill the app**
+- [x] **Step 4: Kill the app**
 
-- [ ] **Step 5: Commit any test-script scaffolding used (never .env or tokens)**
+- [x] **Step 5: Commit any test-script scaffolding used (never .env or tokens)**
 
 ```bash
 git status --short   # confirm only intended files; the user's MediaType work is untouched
@@ -351,14 +351,14 @@ git status --short   # confirm only intended files; the user's MediaType work is
 
 > **CORRECTED FINDING:** `appsettings.json` is listed in `.gitignore` (line 367) since the initial commit (`9d8e273`) and has never been tracked (`git ls-files` is empty, no history). There is therefore **no history rewrite to run** — force-pushing rewritten history would be pointless churn and risk. This task verifies that claim and scans every commit for secret fragments using generic prefixes only (never real values).
 
-- [ ] **Step 1: Back up the user's uncommitted MediaType work (defensive only)**
+- [x] **Step 1: Back up the user's uncommitted MediaType work (defensive only)**
 
 ```bash
 git diff > /tmp/opencode/mediatype.patch
 ls -s /tmp/opencode/mediatype.patch   # confirm non-empty
 ```
 
-- [ ] **Step 2: Confirm appsettings.json is gitignored and untracked**
+- [x] **Step 2: Confirm appsettings.json is gitignored and untracked**
 
 ```bash
 git ls-files appsettings.json; echo "ls-files-exit=$?"
@@ -367,21 +367,21 @@ git log --all --oneline -- appsettings.json; echo "log-exit=$?"
 ```
 Expected: `ls-files` prints nothing, `check-ignore` prints the `.gitignore` rule, `log` prints nothing.
 
-- [ ] **Step 3: Scan ALL history for secret fragments (generic markers only)**
+- [x] **Step 3: Scan ALL history for secret fragments (generic markers only)**
 
 ```bash
 git grep -l -E "sk-proj-|sk_live_|AIzaSy" $(git rev-list --all) 2>/dev/null | sort -u || echo "CLEAN: no secret material in history"
 ```
 Expected: `CLEAN` — if any file is listed, inspect it and scrub only that file (this plan itself was amended to remove such fragments).
 
-- [ ] **Step 4: Confirm no tracked file in the working tree holds real secret values**
+- [x] **Step 4: Confirm no tracked file in the working tree holds real secret values**
 
 ```bash
 git ls-files | xargs grep -lE "sk-proj-|sk_live_|AIzaSy" 2>/dev/null || echo "CLEAN: no tracked file holds secrets"
 ```
 Expected: `CLEAN`. (`.env` is gitignored and intentionally holds the live values — never commit it.)
 
-- [ ] **Step 5: Document the rotation follow-up (not part of this plan)**
+- [x] **Step 5: Document the rotation follow-up (not part of this plan)**
 
 Add a short note to `docs/superpowers/specs/2026-08-03-backend-hardening-design.md` that OpenAI, UploadThing, Gmail SMTP, Gemini, Spotify and Pinecone keys should still be rotated as defense-in-depth, but were **not** exposed through git history. Do not put the key values anywhere.
 

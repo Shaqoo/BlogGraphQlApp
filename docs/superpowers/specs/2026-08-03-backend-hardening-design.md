@@ -18,21 +18,28 @@ secrets from git history. Three workstreams:
 
 ## 1. Secrets scrub
 
-- **`appsettings.json`** (tracked): replace every real secret value with an empty string or a
-  placeholder. Keys affected: `EmailSettings.Password`, `SpotifySettings.ClientId/ClientSecret`,
+> **Corrected finding (verified during implementation):** `appsettings.json` is listed in
+> `.gitignore` (line 367) since the initial commit and has never been tracked (`git ls-files` empty,
+> no history). **No live secret value exists in any commit**, so the history rewrite is unnecessary.
+> The scrub reduces to: sanitize the working `appsettings.json` (defense-in-depth), rely on `.env`,
+> and verify no secret fragments in history.
+
+- **`appsettings.json`** (gitignored, untracked): replace every real secret value with an empty
+  string or a placeholder. Keys affected: `EmailSettings.Password`, `SpotifySettings.ClientId/ClientSecret`,
   `GeminiSettings.ApiKey`, `OpenAI.ApiKey`, `UploadThing.Secret` (and `Token` if present),
   `Daily`/`WebPush`/`Jwt` are already placeholders/absent in this file — verify.
 - **`.env`** (untracked): already contains the real values and is loaded first (Program.cs calls
   `DotNetEnv.Env.Load()` before the host is built), so the app keeps working unchanged after the
   scrub.
-- **History rewrite:** use `git filter-repo` if available, else `git filter-branch --tree-filter`.
-  Target: remove the secret strings from all 33 commits across all refs. Then force-push.
-  Alternative if filter-repo is missing: rewrite the file's full history of `appsettings.json` only.
-- **Rotation warning (documented, not blocking):** the remote is public GitHub
-  (`https://github.com/Shaqoo/BlogGraphQlApp.git`), so the live keys may already be exposed.
-  Recommend rotating OpenAI, UploadThing, Gmail SMTP password, Gemini, Spotify after the rewrite.
+- **History rewrite:** NOT required. Verified `git grep` across all commits finds only generic
+  prefixes (`sk_live_xxxxx` placeholders in `.env.example`, a `<c>sk_live_...` code comment in
+  `Storage/UploadThingStorage.cs`) and the plan's own grep patterns — no real values.
+- **Rotation warning (follow-up, not blocking):** the remote is public GitHub
+  (`https://github.com/Shaqoo/BlogGraphQlApp.git`). The live keys were **not** exposed via git
+  history, but rotate them as defense-in-depth since they may have been shared/committed elsewhere:
+  OpenAI, UploadThing, Gmail SMTP password, Gemini, Spotify, Pinecone.
 - Working tree safety: this repo currently has uncommitted changes (a MediaType feature) that must
-  NOT be committed or touched. The scrub operates on committed history + `appsettings.json` only.
+  NOT be committed or touched. The scrub operates on `appsettings.json` + verification only.
 
 ## 2. Rate limiting
 
