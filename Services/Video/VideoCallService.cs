@@ -37,7 +37,7 @@ namespace BlogGraphQlApp.Services.Video
             _logger = logger;
         }
 
-        public async Task<ApiResponse<VideoCallDto>> StartAsync(Guid callerId, Guid recipientId, CancellationToken cancellationToken = default)
+        public async Task<ApiResponse<VideoCallDto>> StartAsync(Guid callerId, Guid recipientId, CallMediaType mediaType, CancellationToken cancellationToken = default)
         {
             if (callerId == recipientId)
                 return ApiResponse<VideoCallDto>.Fail("You cannot call yourself.");
@@ -62,7 +62,7 @@ namespace BlogGraphQlApp.Services.Video
 
             try
             {
-                var room = await _daily.CreateRoomAsync(roomName, expiresAt, 2, cancellationToken);
+                var room = await _daily.CreateRoomAsync(roomName, expiresAt, 2, cancellationToken, audioOnly: mediaType == CallMediaType.Voice);
                 var callerToken = await _daily.CreateMeetingTokenAsync(roomName, caller.FullName, isOwner: true, expiresAt, cancellationToken);
 
                 var call = new ActiveVideoCall
@@ -72,6 +72,7 @@ namespace BlogGraphQlApp.Services.Video
                     DailyRoomUrl = room.Url,
                     CallerId = callerId,
                     RecipientId = recipientId,
+                    MediaType = mediaType,
                     Status = VideoCallStatus.Ringing
                 };
 
@@ -191,6 +192,21 @@ namespace BlogGraphQlApp.Services.Video
             return ApiResponse<VideoCallDto>.Success(Map(call, null, null));
         }
 
+        public async Task<ApiResponse<VideoCallDto>> GetActiveIncomingCallAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var call = await _unitOfWork.ActiveVideoCalls
+                .Find(c => c.RecipientId == userId && c.Status == VideoCallStatus.Ringing)
+                .OrderByDescending(c => c.CreatedAt)
+                .Include(c => c.Caller)
+                .Include(c => c.Recipient)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (call is null)
+                return ApiResponse<VideoCallDto>.Fail("No active incoming call.");
+
+            return ApiResponse<VideoCallDto>.Success(Map(call, null, null));
+        }
+
         public async Task<ApiResponse<VideoCallDto>> GetTokenAsync(Guid callId, Guid userId, CancellationToken cancellationToken = default)
         {
             var call = await FindCallAsync(callId, cancellationToken);
@@ -262,6 +278,7 @@ namespace BlogGraphQlApp.Services.Video
             CallerName = caller?.FullName ?? call.Caller?.FullName ?? string.Empty,
             CallerAvatar = caller?.ProfilePictureUrl ?? call.Caller?.ProfilePictureUrl,
             RecipientId = call.RecipientId,
+            MediaType = call.MediaType,
             Status = call.Status,
             CreatedAt = call.CreatedAt,
             EndedAt = call.EndedAt

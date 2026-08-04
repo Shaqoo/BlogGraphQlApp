@@ -28,6 +28,7 @@ namespace BlogGraphQlApp.Services.Groups
         Task<ApiResponse<bool>> RejectJoinRequestAsync(Guid groupId, Guid actorId, Guid requestId, CancellationToken ct = default);
         Task<ApiResponse<IEnumerable<GroupJoinRequestDto>>> GetPendingJoinRequestsAsync(Guid groupId, Guid actorId, CancellationToken ct = default);
         Task<ApiResponse<string>> GetInviteCodeAsync(Guid groupId, Guid actorId, CancellationToken ct = default);
+        Task<ApiResponse<GroupDto>> GetGroupByInviteCodeAsync(string inviteCode, Guid userId, CancellationToken ct = default);
         Task<ApiResponse<bool>> MuteGroupAsync(Guid groupId, Guid userId, DateTime? mutedUntil, CancellationToken ct = default);
         Task<ApiResponse<bool>> SetNotificationLevelAsync(Guid groupId, Guid userId, NotificationLevel level, CancellationToken ct = default);
     }

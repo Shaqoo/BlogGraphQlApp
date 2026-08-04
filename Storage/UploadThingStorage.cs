@@ -28,6 +28,7 @@ namespace BlogGraphQlApp.Storage
         private const string ApiBaseUrl = "https://api.uploadthing.com";
         private const string PrepareUploadEndpoint = "/v7/prepareUpload";
         private const string DeleteFilesEndpoint = "/v6/deleteFiles";
+        private const string UploadthingVersion = "7.7.4";
         private static readonly TimeSpan UploadTimeout = TimeSpan.FromMinutes(10);
 
         private readonly IConfiguration _configuration;
@@ -184,6 +185,7 @@ namespace BlogGraphQlApp.Storage
             {
                 var request = new HttpRequestMessage(HttpMethod.Put, presignedUrl);
                 request.Headers.Add("Range", "bytes=0-");
+                request.Headers.Add("x-uploadthing-version", UploadthingVersion);
 
                 var formData = new MultipartFormDataContent();
                 formData.Add(new StreamContent(openStream()), "file", fileName);

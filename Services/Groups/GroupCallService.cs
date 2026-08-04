@@ -70,7 +70,7 @@ namespace BlogGraphQlApp.Services.Groups
 
             try
             {
-                var room = await _daily.CreateRoomAsync(roomName, expiresAt, Math.Max(2, memberIds.Count), ct);
+                var room = await _daily.CreateRoomAsync(roomName, expiresAt, Math.Max(2, memberIds.Count), ct, audioOnly: mediaType == CallMediaType.Voice);
                 var starter = await _unitOfWork.Users.GetByIdAsync(startedById);
                 var starterToken = await _daily.CreateMeetingTokenAsync(roomName, starter?.FullName ?? "starter", isOwner: true, expiresAt, ct);
 

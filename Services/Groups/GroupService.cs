@@ -469,6 +469,32 @@ namespace BlogGraphQlApp.Services.Groups
             return ApiResponse<GroupDto>.Success(await ToGroupDtoAsync(group, userId, ct), "Joined group.");
         }
 
+        public async Task<ApiResponse<GroupDto>> GetGroupByInviteCodeAsync(string inviteCode, Guid userId, CancellationToken ct = default)
+        {
+            var group = await _unitOfWork.ChatGroups
+                .Find(g => g.InviteCode == inviteCode)
+                .FirstOrDefaultAsync(ct);
+            if (group is null) return ApiResponse<GroupDto>.Fail("Invalid invite code.");
+
+            var membership = await _permissions.GetMembershipAsync(group.Id, userId, ct);
+            var count = await _unitOfWork.ChatGroupMembers.CountAsync(m => m.GroupId == group.Id);
+
+            return ApiResponse<GroupDto>.Success(new GroupDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Description = group.Description,
+                ImageUrl = group.ImageUrl,
+                IsPrivate = group.IsPrivate,
+                MaxMembers = group.MaxMembers,
+                CreatedBy = group.CreatedBy,
+                CreatedByName = group.CreatedByUser?.FullName ?? string.Empty,
+                CreatedAt = group.CreatedAt,
+                MemberCount = count,
+                IsMember = membership is not null
+            });
+        }
+
         public async Task<ApiResponse<bool>> RequestJoinAsync(Guid groupId, Guid userId, CancellationToken ct = default)
         {
             var group = await _unitOfWork.ChatGroups.GetByIdAsync(groupId);

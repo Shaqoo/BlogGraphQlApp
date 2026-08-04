@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using BlogGraphQlApp.Common;
 using BlogGraphQlApp.DTOs;
+using BlogGraphQlApp.Enums;
 using BlogGraphQlApp.Services.Video;
 using HotChocolate.Authorization;
 
@@ -10,15 +11,16 @@ namespace BlogGraphQlApp.GraphQL.Mutations
     public class VideoCallMutations
     {
         [Authorize]
-        [GraphQLDescription("Starts a Daily.co 1-to-1 video call with another user. The recipient gets a realtime and web-push notification.")]
+        [GraphQLDescription("Starts a Daily.co 1-to-1 call (voice or video) with another user. The recipient gets a realtime and web-push notification.")]
         public async Task<ApiResponse<VideoCallDto>> StartVideoCallAsync(
             Guid recipientId,
+            CallMediaType mediaType,
             ClaimsPrincipal claimsPrincipal,
             [Service] IVideoCallService videoCallService,
             CancellationToken cancellationToken)
         {
             var callerId = claimsPrincipal.GetUserId();
-            return await videoCallService.StartAsync(callerId, recipientId, cancellationToken);
+            return await videoCallService.StartAsync(callerId, recipientId, mediaType, cancellationToken);
         }
 
         [Authorize]

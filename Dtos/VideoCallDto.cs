@@ -12,6 +12,7 @@ namespace BlogGraphQlApp.DTOs
         public string CallerName { get; set; } = string.Empty;
         public string? CallerAvatar { get; set; }
         public Guid RecipientId { get; set; }
+        public CallMediaType MediaType { get; set; } = CallMediaType.Video;
         public VideoCallStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? EndedAt { get; set; }

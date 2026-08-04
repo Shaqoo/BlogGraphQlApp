@@ -25,6 +25,7 @@ namespace BlogGraphQlApp.GraphQL.Types
             descriptor.Field(g => g.CreatedBy).Description("The user who created the group.");
             descriptor.Field(g => g.MemberCount).Description("Number of members.");
             descriptor.Field(g => g.UnreadCount).Description("Unread message count for the requesting user.");
+            descriptor.Field(g => g.IsMember).Description("Whether the requesting user is already a member.");
         }
     }
 }

@@ -11,10 +11,12 @@ namespace BlogGraphQlApp.Endpoints
         /// browser must pass to <c>PushManager.subscribe</c>. The private key is never
         /// exposed and never leaves the server.
         /// </summary>
+        /// <param name="app">The route builder to register the endpoint with.</param>
+        /// <returns>The route builder for chaining.</returns>
         public static IEndpointRouteBuilder MapWebPushEndpoints(this IEndpointRouteBuilder app)
         {
             app.MapGet("/api/web-push/vapid-key", (IOptions<VapidSettings> options) =>
-            {
+            {   
                 var publicKey = options.Value.PublicKey;
                 if (string.IsNullOrWhiteSpace(publicKey))
                     return Results.Problem("Web Push is not configured.", statusCode: 503);

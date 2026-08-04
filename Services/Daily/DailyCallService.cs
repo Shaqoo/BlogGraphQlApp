@@ -42,7 +42,8 @@ namespace BlogGraphQlApp.Services.Daily
             string roomName,
             DateTime expiresAt,
             int maxParticipants,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            bool audioOnly = false)
         {
             var payload = new
             {
@@ -53,7 +54,8 @@ namespace BlogGraphQlApp.Services.Daily
                     exp = ToUnixSeconds(expiresAt),
                     max_participants = maxParticipants,
                     enable_chat = false,
-                    enable_screenshare = false
+                    enable_screenshare = false,
+                    permissions = audioOnly ? new { canSend = new[] { "audio" } } : null
                 }
             };
 

@@ -69,6 +69,18 @@ namespace BlogGraphQlApp.GraphQL.Queries
         }
 
         [Authorize]
+        [GraphQLDescription("Gets basic info about a group by its invite code, without requiring membership.")]
+        public async Task<ApiResponse<GroupDto>> GetGroupByInviteCodeAsync(
+            string inviteCode,
+            ClaimsPrincipal claimsPrincipal,
+            [Service] IGroupService groupService,
+            CancellationToken cancellationToken)
+        {
+            var userId = claimsPrincipal.GetUserId();
+            return await groupService.GetGroupByInviteCodeAsync(inviteCode, userId, cancellationToken);
+        }
+
+        [Authorize]
         [GraphQLDescription("Gets the state of a group video call the user can join.")]
         public async Task<ApiResponse<GroupCallDto>> GetGroupCallAsync(
             Guid callId,

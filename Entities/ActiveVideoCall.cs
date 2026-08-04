@@ -12,6 +12,7 @@ namespace BlogGraphQlApp.Entities
         public User Caller { get; set; } = null!;
         public Guid RecipientId { get; set; }
         public User Recipient { get; set; } = null!;
+        public CallMediaType MediaType { get; set; } = CallMediaType.Video;
         public VideoCallStatus Status { get; set; } = VideoCallStatus.Ringing;
         public DateTime? ConnectedAt { get; set; }
         public DateTime? EndedAt { get; set; }

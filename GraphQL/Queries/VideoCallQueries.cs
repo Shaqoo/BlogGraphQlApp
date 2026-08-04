@@ -20,5 +20,16 @@ namespace BlogGraphQlApp.GraphQL.Queries
             var userId = claimsPrincipal.GetUserId();
             return await videoCallService.GetAsync(callId, userId, cancellationToken);
         }
+
+        [Authorize]
+        [GraphQLDescription("Gets the currently ringing incoming 1-to-1 call for the authenticated user, if any.")]
+        public async Task<ApiResponse<VideoCallDto>> GetActiveIncomingCallAsync(
+            ClaimsPrincipal claimsPrincipal,
+            [Service] IVideoCallService videoCallService,
+            CancellationToken cancellationToken)
+        {
+            var userId = claimsPrincipal.GetUserId();
+            return await videoCallService.GetActiveIncomingCallAsync(userId, cancellationToken);
+        }
     }
 }

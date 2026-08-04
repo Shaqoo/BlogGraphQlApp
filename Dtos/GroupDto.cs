@@ -20,5 +20,6 @@ namespace BlogGraphQlApp.DTOs
         public DateTime CreatedAt { get; set; }
         public int MemberCount { get; set; }
         public int UnreadCount { get; set; }
+        public bool IsMember { get; set; }
     }
 }

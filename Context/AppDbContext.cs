@@ -66,6 +66,16 @@ namespace BlogGraphQlApp.Data
                       .HasColumnType("json");    
             });
 
+            // Push endpoints (e.g. Firebase/Web Push gateways) exceed the default
+            // varchar(255) limit; widen it so registration succeeds while keeping
+            // the unique Endpoint index valid (utf8mb4 → max ~768 chars).
+            modelBuilder.Entity<UserWebPushSubscription>(entity =>
+            {
+                entity.Property(s => s.Endpoint)
+                      .HasColumnType("varchar(700)");
+                entity.ToTable("WebPushSubscriptions");
+            });
+
 
 
             modelBuilder.Entity<ModerationResult>().ToTable("ModerationResults");

@@ -3,6 +3,7 @@ using System;
 using BlogGraphQlApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlogGraphQlApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260802204107_AddMediaTypeToVideoCalls")]
+    partial class AddMediaTypeToVideoCalls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -852,7 +855,7 @@ namespace BlogGraphQlApp.Migrations
 
                     b.Property<string>("Endpoint")
                         .IsRequired()
-                        .HasColumnType("varchar(700)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
@@ -874,7 +877,7 @@ namespace BlogGraphQlApp.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("WebPushSubscriptions", (string)null);
+                    b.ToTable("WebPushSubscriptions");
                 });
 
             modelBuilder.Entity("BlogGraphQlApp.Models.Conversation", b =>
