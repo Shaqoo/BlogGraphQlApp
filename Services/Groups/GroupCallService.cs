@@ -88,7 +88,7 @@ namespace BlogGraphQlApp.Services.Groups
                 await _unitOfWork.GroupVideoCalls.AddAsync(call);
                 await _unitOfWork.GroupVideoCallParticipants.AddAsync(new GroupVideoCallParticipant
                 {
-                    CallId = callId,
+                    CallId = call.Id,
                     UserId = startedById,
                     Token = null,
                     JoinedAt = DateTime.UtcNow
@@ -122,8 +122,13 @@ namespace BlogGraphQlApp.Services.Groups
             }
             catch (DailyApiException ex)
             {
-                _logger.LogError(ex, "Failed to start group call for group {GroupId}.", groupId);
+                _logger.LogError(ex, "Daily API failed while starting group call for group {GroupId}.", groupId);
                 return ApiResponse<GroupCallDto>.Fail(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error starting group call for group {GroupId}.", groupId);
+                return ApiResponse<GroupCallDto>.Fail($"Failed to start group call: {ex.Message}");
             }
         }
 
@@ -146,14 +151,14 @@ namespace BlogGraphQlApp.Services.Groups
                 var token = await _daily.CreateMeetingTokenAsync(call.RoomName, user?.FullName ?? "member", isOwner: false, DateTime.UtcNow.AddMinutes(30), cancellationToken);
 
                 var participant = await _unitOfWork.GroupVideoCallParticipants
-                    .Find(p => p.CallId == callId && p.UserId == userId)
+                    .Find(p => p.CallId == call.Id && p.UserId == userId)
                     .FirstOrDefaultAsync(cancellationToken);
 
                 if (participant is null)
                 {
                     await _unitOfWork.GroupVideoCallParticipants.AddAsync(new GroupVideoCallParticipant
                     {
-                        CallId = callId,
+                        CallId = call.Id,
                         UserId = userId,
                         Token = token,
                         JoinedAt = DateTime.UtcNow
@@ -181,8 +186,13 @@ namespace BlogGraphQlApp.Services.Groups
             }
             catch (DailyApiException ex)
             {
-                _logger.LogError(ex, "Failed to join group call {CallId}.", callId);
+                _logger.LogError(ex, "Daily API failed while joining group call {CallId}.", callId);
                 return ApiResponse<GroupCallDto>.Fail(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error joining group call {CallId}.", callId);
+                return ApiResponse<GroupCallDto>.Fail($"Failed to join group call: {ex.Message}");
             }
         }
 
@@ -209,7 +219,7 @@ namespace BlogGraphQlApp.Services.Groups
             if (call is null) return ApiResponse<bool>.Fail("Group call not found.");
 
             var participant = await _unitOfWork.GroupVideoCallParticipants
-                .Find(p => p.CallId == callId && p.UserId == userId)
+                .Find(p => p.CallId == call.Id && p.UserId == userId)
                 .FirstOrDefaultAsync(ct);
             if (participant is null) return ApiResponse<bool>.Fail("You are not in this call.");
 
@@ -236,8 +246,11 @@ namespace BlogGraphQlApp.Services.Groups
 
         private async Task<ApiResponse<bool>> ToggleParticipantFlagAsync(Guid callId, Guid userId, Action<GroupVideoCallParticipant> toggle, CancellationToken ct)
         {
+            var call = await FindCallAsync(callId, ct);
+            if (call is null) return ApiResponse<bool>.Fail("Group call not found.");
+
             var participant = await _unitOfWork.GroupVideoCallParticipants
-                .Find(p => p.CallId == callId && p.UserId == userId)
+                .Find(p => p.CallId == call.Id && p.UserId == userId)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(ct);
             if (participant is null) return ApiResponse<bool>.Fail("You are not in this call.");
@@ -260,7 +273,7 @@ namespace BlogGraphQlApp.Services.Groups
                 return ApiResponse<IEnumerable<GroupCallParticipantDto>>.Fail("You are not a member of this group.");
 
             var participants = await _unitOfWork.GroupVideoCallParticipants
-                .Find(p => p.CallId == callId)
+                .Find(p => p.CallId == call.Id)
                 .Include(p => p.User)
                 .OrderBy(p => p.JoinedAt)
                 .ToListAsync(ct);
@@ -332,14 +345,14 @@ namespace BlogGraphQlApp.Services.Groups
                 var token = await _daily.CreateMeetingTokenAsync(call.RoomName, user?.FullName ?? "member", isOwner, DateTime.UtcNow.AddMinutes(30), cancellationToken);
 
                 var participant = await _unitOfWork.GroupVideoCallParticipants
-                    .Find(p => p.CallId == callId && p.UserId == userId)
+                    .Find(p => p.CallId == call.Id && p.UserId == userId)
                     .FirstOrDefaultAsync(cancellationToken);
 
                 if (participant is null)
                 {
                     await _unitOfWork.GroupVideoCallParticipants.AddAsync(new GroupVideoCallParticipant
                     {
-                        CallId = callId,
+                        CallId = call.Id,
                         UserId = userId,
                         Token = token
                     });
@@ -356,8 +369,13 @@ namespace BlogGraphQlApp.Services.Groups
             }
             catch (DailyApiException ex)
             {
-                _logger.LogError(ex, "Failed to issue token for group call {CallId}.", callId);
+                _logger.LogError(ex, "Daily API failed while getting token for group call {CallId}.", callId);
                 return ApiResponse<GroupCallDto>.Fail(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error getting token for group call {CallId}.", callId);
+                return ApiResponse<GroupCallDto>.Fail($"Failed to get token: {ex.Message}");
             }
         }
 

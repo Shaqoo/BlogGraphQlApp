@@ -30,9 +30,11 @@ namespace BlogGraphQlApp.Services.Daily
         private DailySettings Settings => _options.Value;
 
         /// <summary>
-        /// Fallback meeting URL: https://{DAILY_SUBDOMAIN}.daily.co/{roomName}.
+        /// Builds a fallback meeting URL in the format https://{DAILY_SUBDOMAIN}.daily.co/{roomName}.
         /// The Daily API normally returns the full URL; this is only used if it does not.
         /// </summary>
+        /// <param name="roomName">The name of the Daily room to include in the URL.</param>
+        /// <returns>The constructed meeting URL, or null if the subdomain is not configured.</returns>
         private string? BuildMeetingUrl(string roomName) =>
             string.IsNullOrWhiteSpace(Settings.Subdomain)
                 ? null
@@ -194,6 +196,8 @@ namespace BlogGraphQlApp.Services.Daily
             catch (JsonException)
             {
                 // Non-JSON error body; fall back to the generic status message.
+                return null;
+            
             }
 
             return null;

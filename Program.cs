@@ -366,7 +366,18 @@ app.UseWebSockets();
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(webRootPath)
+    FileProvider = new PhysicalFileProvider(webRootPath),
+    OnPrepareResponse = ctx =>
+    {
+        var origin = ctx.Context.Request.Headers["Origin"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(origin))
+        {
+            ctx.Context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+            ctx.Context.Response.Headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS";
+            ctx.Context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+            ctx.Context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
+        }
+    }
 });
 
 app.UseAuthentication();
