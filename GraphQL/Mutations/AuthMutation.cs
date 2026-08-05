@@ -3,6 +3,7 @@ using BlogGraphQlApp.Common;
 using BlogGraphQlApp.Core.Interfaces;
 using BlogGraphQlApp.DTOs;
 using FluentValidation;
+using HotChocolate.Authorization;
 
 namespace BlogGraphQlApp.GraphQL.Mutations
 {
@@ -34,9 +35,11 @@ namespace BlogGraphQlApp.GraphQL.Mutations
             [Required, MinLength(8), RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).*$", ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.")] string NewPassword,
             [Required] string ConfirmPassword);
 
-     
+        public record RefreshTokenInput([Required] string RefreshToken);
 
-        public async Task<ApiResponse<string>> LoginAsync(
+        public record LogoutInput([Required] string RefreshToken);
+
+        public async Task<ApiResponse<AuthResultDto>> LoginAsync(
             LoginInput input,
             [Service] IAuthService authService)
         {
@@ -67,7 +70,7 @@ namespace BlogGraphQlApp.GraphQL.Mutations
             return await authService.RequestVerificationCodeAsync(input.Email);
         }
 
-        public async Task<ApiResponse<string>> VerifyEmailAsync(
+        public async Task<ApiResponse<AuthResultDto>> VerifyEmailAsync(
             VerifyEmailInput input,
             [Service] IAuthService authService)
         {
@@ -93,6 +96,23 @@ namespace BlogGraphQlApp.GraphQL.Mutations
             }
 
             return await authService.ResetPasswordAsync(input.Email, input.Token, input.NewPassword, input.ConfirmPassword);
+        }
+
+        [GraphQLDescription("Exchanges an unexpired refresh token for a new access/refresh token pair (rotation).")]
+        public async Task<ApiResponse<AuthResultDto>> RefreshTokenAsync(
+            RefreshTokenInput input,
+            [Service] IAuthService authService)
+        {
+            return await authService.RefreshTokenAsync(input.RefreshToken);
+        }
+
+        [Authorize]
+        [GraphQLDescription("Revokes the presented refresh token (single-device logout).")]
+        public async Task<ApiResponse<bool>> LogoutAsync(
+            LogoutInput input,
+            [Service] IAuthService authService)
+        {
+            return await authService.LogoutAsync(input.RefreshToken);
         }
     }
 }
