@@ -1,11 +1,13 @@
 ﻿using BlogGraphQlApp.Data;
 using BlogGraphQlApp.Repositories.Interfaces;
 using BlogGraphQlApp.Services.Implementations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogGraphQlApp.Hubs
 {
+    [Authorize]
     public class PresenceHub : Hub
     {
         private readonly PresenceTracker _tracker;
@@ -19,7 +21,11 @@ namespace BlogGraphQlApp.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Guid.Parse(Context.UserIdentifier!);
+            if (!Guid.TryParse(Context.UserIdentifier, out var userId))
+            {
+                await base.OnConnectedAsync();
+                return;
+            }
 
             await _tracker.UserConnected(userId, Context.ConnectionId);
 
@@ -31,7 +37,11 @@ namespace BlogGraphQlApp.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var userId = Guid.Parse(Context.UserIdentifier!);
+            if (!Guid.TryParse(Context.UserIdentifier, out var userId))
+            {
+                await base.OnDisconnectedAsync(exception);
+                return;
+            }
 
             await _tracker.UserDisconnected(userId, Context.ConnectionId);
 
@@ -64,7 +74,7 @@ namespace BlogGraphQlApp.Hubs
         // Optional: heartbeat method for more accurate tracking
         public async Task Heartbeat()
         {
-            var userId = Guid.Parse(Context.UserIdentifier!);
+            if (!Guid.TryParse(Context.UserIdentifier, out var userId)) return;
             await UpdateLastSeen(userId);
         }
     }

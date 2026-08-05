@@ -66,6 +66,21 @@ Client flow:
 4. On failure, the refresh token is invalid/expired/revoked → clear local tokens and route to
    the login screen.
 
+## SignalR (presence hub) — must be authenticated
+
+Connect with the access token as a query param (browsers can't set the `Authorization` header
+on the WebSocket handshake):
+
+```
+wss://<host>/hubs/presence?access_token=<accessToken>
+```
+
+- Unauthenticated connections are rejected (`[Authorize]`); the handshake fails with a 401/403.
+- **Reconnect after a refresh:** the hub uses the token from the initial handshake, so if you
+  refresh the access token, re-establish the connection with the new token (e.g. reconnect in
+  the `refreshToken` success path).
+- `Heartbeat` and presence state require a valid token.
+
 ## Logout (revokes the device session)
 
 ```graphql
