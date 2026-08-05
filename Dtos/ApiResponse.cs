@@ -6,6 +6,8 @@
         public T? Data { get; private set; }
         public string? Message { get; private set; }
         public List<string> Errors { get; private set; } = [];
+        public int? LockoutRemainingSeconds { get; set; }
+        public DateTime? LockoutEndsAtUtc { get; set; }
 
         public static ApiResponse<T> Success(T data, string? message = "Operation completed successfully.")
         {
@@ -20,6 +22,18 @@
         public static ApiResponse<T> Fail(string errorMessage)
         {
             return new ApiResponse<T> { Succeeded = false, Message = errorMessage, Errors = [errorMessage] };
+        }
+
+        public static ApiResponse<T> FailLocked(string message, int lockoutRemainingSeconds, DateTime lockoutEndsAtUtc)
+        {
+            return new ApiResponse<T>
+            {
+                Succeeded = false,
+                Message = message,
+                Errors = [message],
+                LockoutRemainingSeconds = lockoutRemainingSeconds,
+                LockoutEndsAtUtc = lockoutEndsAtUtc
+            };
         }
     }
 }

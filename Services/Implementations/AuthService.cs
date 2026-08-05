@@ -124,7 +124,9 @@ namespace BlogGraphQlApp.Infrastructure.Services
             {
                 if (user.LockoutEndUtc is DateTime lockoutEnd && lockoutEnd > now)
                 {
-                    return ApiResponse<AuthResultDto>.Fail(LockoutMessage);
+                    var remaining = (int)Math.Ceiling((lockoutEnd - now).TotalSeconds);
+                    var message = $"Account is temporarily locked due to too many failed login attempts. Please try again in {FormatRemaining(remaining)}.";
+                    return ApiResponse<AuthResultDto>.FailLocked(message, remaining, lockoutEnd);
                 }
 
                 if (user.LockoutEndUtc is not null)
@@ -355,8 +357,17 @@ namespace BlogGraphQlApp.Infrastructure.Services
         private string? GetClientIp() =>
             _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
-        private static string LockoutMessage =>
-            "Account is temporarily locked due to too many failed login attempts. Please try again later.";
+        private static string FormatRemaining(int remainingSeconds)
+        {
+            if (remainingSeconds >= 60)
+            {
+                var minutes = remainingSeconds / 60;
+                var seconds = remainingSeconds % 60;
+                return seconds == 0 ? $"{minutes}m" : $"{minutes}m {seconds}s";
+            }
+
+            return $"{remainingSeconds}s";
+        }
 
         private int AccessTokenMinutes => GetIntConfig("Jwt:AccessTokenMinutes", 30);
         private int RefreshTokenDays => GetIntConfig("Jwt:RefreshTokenDays", 30);
