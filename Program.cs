@@ -163,6 +163,7 @@ builder.Services.AddScoped<IGroupCallService, GroupCallService>();
 builder.Services.AddScoped<ICallHistoryService, CallHistoryService>();
 builder.Services.AddScoped<DailyWebhookService>();
 builder.Services.AddHostedService<DailyRoomCleanupService>();
+builder.Services.AddHostedService<RefreshTokenCleanupService>();
 
 // File storage is selected based on the runtime environment.
 // - Development: files are stored under wwwroot/uploads and served locally.
