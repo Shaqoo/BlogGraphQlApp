@@ -28,8 +28,6 @@ namespace BlogGraphQlApp.Infrastructure
         public IRepository<Hashtag> HashTags { get; }
         public IRepository<PostHashtag> PostHashtags { get; }
 
-        public IRepository<ModerationResult> ModerationResults { get; }
-
         public IRepository<AiUsage> AiUsages { get; }
 
         public IRepository<UserWebPushSubscription> WebPushSubscriptions { get; }
@@ -74,7 +72,6 @@ namespace BlogGraphQlApp.Infrastructure
             HashTags = new Repository<Hashtag>(_context);
             PostHashtags = new Repository<PostHashtag>(_context);
             AiUsages = new Repository<AiUsage>(_context);
-            ModerationResults = new Repository<ModerationResult>(_context);
             WebPushSubscriptions = new Repository<UserWebPushSubscription>(_context);
             ActiveVideoCalls = new Repository<ActiveVideoCall>(_context);
             ChatGroups = new Repository<ChatGroup>(_context);

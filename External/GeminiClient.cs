@@ -90,42 +90,6 @@ Tags: {string.Join(", ", tags)}";
             return captions;
         }
 
-        // === Moderation System ===
-        public async Task<(bool Allowed, List<string> Categories, string Rationale)> ModerateAsync(string content)
-        {
-            var prompt = $"You are Reelio's Moderation AI. Analyze the following content for safety:\n{content}";
-
-            var payload = new
-            {
-                contents = new[]
-                {
-                    new { role = "user", parts = new[] { new { text = prompt } } }
-                },
-                safetySettings = new[]
-                {
-                    new { category = "HATE_SPEECH", threshold = "BLOCK" },
-                    new { category = "HARASSMENT", threshold = "BLOCK" },
-                    new { category = "SEXUAL_CONTENT", threshold = "BLOCK" }
-                }
-            };
-
-            var res = await _httpClient.PostAsJsonAsync("models/gemini-pro:generateContent", payload);
-            res.EnsureSuccessStatusCode();
-
-            var json = await res.Content.ReadFromJsonAsync<JsonElement>();
-            var safety = json.GetProperty("promptFeedback").GetProperty("safetyRatings");
-
-            var blocked = safety.EnumerateArray()
-                .Where(r => r.GetProperty("blocked").GetBoolean())
-                .Select(r => r.GetProperty("category").GetString() ?? string.Empty)
-                .ToList();
-
-            var allowed = blocked.Count == 0;
-            var rationale = allowed ? "Passed safety thresholds." : $"Blocked categories: {string.Join(", ", blocked)}";
-
-            return (allowed, blocked, rationale);
-        }
-
         public async Task<List<string>> GenerateImageCaptionsAsync(string relativePath)
         {
             // 1. Read file bytes from file storage (wwwroot in dev, UploadThing in production)
@@ -205,86 +169,6 @@ Transcript:
                        .ToList();
         }
 
-
-        public async Task<(bool Allowed, List<string> Categories, string Rationale)> ModerateImageAsync(string relativePath)
-        {
-            // 1. Read image from file storage (wwwroot in dev, UploadThing in production)
-            var bytes = await _fileStorage.DownloadAsync(relativePath);
-            var base64 = Convert.ToBase64String(bytes);
-
-            // 2. Build prompt
-            var prompt = "You are Reelio's moderation AI. Analyze this image for unsafe or harmful content.";
-
-            // 3. Payload with inline_data
-            var payload = new
-            {
-                contents = new[]
-                {
-            new {
-                role = "user",
-                parts = new object[]
-                {
-                    new { text = prompt },
-                    new { inline_data = new { mime_type = "image/jpeg", data = base64 } }
-                }
-            }
-        },
-                safetySettings = new[]
-                {
-            new { category = "HATE_SPEECH", threshold = "BLOCK" },
-            new { category = "HARASSMENT", threshold = "BLOCK" },
-            new { category = "SEXUAL_CONTENT", threshold = "BLOCK" },
-            new { category = "VIOLENCE", threshold = "BLOCK" }
-        }
-            };
-
-            // 4. Send to Gemini Vision
-            var res = await _httpClient.PostAsJsonAsync("models/gemini-pro-vision:generateContent", payload);
-            res.EnsureSuccessStatusCode();
-
-            var json = await res.Content.ReadFromJsonAsync<JsonElement>();
-            var safety = json.GetProperty("promptFeedback").GetProperty("safetyRatings");
-
-            var blocked = safety.EnumerateArray()
-                .Where(r => r.GetProperty("blocked").GetBoolean())
-                .Select(r => r.GetProperty("category").GetString() ?? string.Empty)
-                .ToList();
-
-            var allowed = blocked.Count == 0;
-            var rationale = allowed ? "Passed safety thresholds." : $"Blocked categories: {string.Join(", ", blocked)}";
-
-            return (allowed, blocked, rationale);
-        }
-
-        public async Task<(bool Allowed, List<string> Categories, string Rationale)> ModerateVideoAsync(
-        string transcript,
-        List<string> framePaths)
-        {
-            var blockedCategories = new List<string>();
-            var rationaleParts = new List<string>();
-
-            // 1. Moderate transcript as text
-            if (!string.IsNullOrWhiteSpace(transcript))
-            {
-                var (allowedText, catsText, rationaleText) = await ModerateAsync(transcript);
-                if (!allowedText) blockedCategories.AddRange(catsText);
-                rationaleParts.Add($"Transcript moderation: {rationaleText}");
-            }
-
-            // 2. Moderate key frames as images
-            foreach (var framePath in framePaths)
-            {
-                var (allowedImg, catsImg, rationaleImg) = await ModerateImageAsync(framePath);
-                if (!allowedImg) blockedCategories.AddRange(catsImg);
-                rationaleParts.Add($"Frame {framePath} moderation: {rationaleImg}");
-            }
-
-            // 3. Combine results
-            var allowed = blockedCategories.Count == 0;
-            var rationale = string.Join(" | ", rationaleParts);
-
-            return (allowed, blockedCategories.Distinct().ToList(), rationale);
-        }
 
         private string BuildPostPrompt(string input)
         {

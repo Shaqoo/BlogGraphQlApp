@@ -21,7 +21,6 @@ namespace BlogGraphQlApp.Repositories.Interfaces
         IRepository<PostMention> PostMentions { get; }
         IRepository<Hashtag> HashTags { get; }
         IRepository<PostHashtag> PostHashtags { get; }
-        IRepository<ModerationResult> ModerationResults { get; }
         IRepository<AiUsage> AiUsages { get; }
         IRepository<UserWebPushSubscription> WebPushSubscriptions { get; }
         IRepository<ActiveVideoCall> ActiveVideoCalls { get; }

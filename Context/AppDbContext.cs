@@ -61,12 +61,6 @@ namespace BlogGraphQlApp.Data
                 .HasForeignKey(m => m.ReplyToMessageId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<ModerationResult>(entity =>
-            {
-                entity.Property(m => m.Categories)
-                      .HasColumnType("json");    
-            });
-
             // Push endpoints (e.g. Firebase/Web Push gateways) exceed the default
             // varchar(255) limit; widen it so registration succeeds while keeping
             // the unique Endpoint index valid (utf8mb4 → max ~768 chars).
@@ -79,7 +73,6 @@ namespace BlogGraphQlApp.Data
 
 
 
-            modelBuilder.Entity<ModerationResult>().ToTable("ModerationResults");
             modelBuilder.Entity<AiUsage>().ToTable("AiUsages");
 
 

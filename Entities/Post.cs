@@ -25,7 +25,6 @@ namespace BlogGraphQlApp.Models
         public ICollection<PostHashtag> PostHashtags { get; set; } = [];
         public string? Transcript { get; set; }
         public List<string>? FramePaths { get; set; }
-        public ICollection<ModerationResult> ModerationResults { get; set; } = [];
         public bool IsVectorized { get; set; } = false;
     }
 }
