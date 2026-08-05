@@ -27,16 +27,14 @@ namespace BlogGraphQlApp.External
         }
 
         // === AI Chat Assistant ===
-        public async Task<string> GenerateChatAsync(string input)
+        public async Task<string> GenerateChatAsync(string input, string userName)
         {
-            //var prompt = $"You are Reelio's AI Assistant. Be concise, helpful, and engaging.\nUser input: {input}";
-
             var payload = new
             {
                 model = "gemini-2.5-pro",
                 messages = new[]
                 {
-                new { role = "user", content = BuildPostPrompt(input) }
+                new { role = "user", content = BuildPostPrompt(input, userName) }
             }
             };
 
@@ -170,10 +168,11 @@ Transcript:
         }
 
 
-        private string BuildPostPrompt(string input)
+        private string BuildPostPrompt(string input, string userName)
         {
             return $@"
 You are Reelio's AI Assistant. 
+You are chatting with {userName}, a Reelio user. Always address them by their name and personalize your replies to them.
 You create powerful, engaging social media content based on a title or user prompt.
 
 RULES:

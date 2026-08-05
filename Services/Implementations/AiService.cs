@@ -52,7 +52,10 @@ namespace BlogGraphQlApp.Services.Implementations
             if (!await CheckLimitAsync(userId, "chat"))
                 return "AI usage limit reached (5 requests).";
 
-            return await _gemini.GenerateChatAsync(input);
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            var userName = user?.FullName ?? "a Reelio user";
+
+            return await _gemini.GenerateChatAsync(input, userName);
         }
 
         public async Task<List<string>> CaptionAsync(Guid userId, Guid postId)
