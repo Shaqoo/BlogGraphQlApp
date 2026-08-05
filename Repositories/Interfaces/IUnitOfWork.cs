@@ -8,6 +8,7 @@ namespace BlogGraphQlApp.Repositories.Interfaces
     public interface IUnitOfWork : IDisposable
     {
         IRepository<User> Users { get; }
+        IRepository<RefreshToken> RefreshTokens { get; }
         IRepository<Post> Posts { get; }
         IRepository<Reel> Reels { get; }
         IRepository<Reaction> Reactions { get; }

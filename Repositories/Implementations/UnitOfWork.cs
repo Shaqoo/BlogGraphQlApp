@@ -14,6 +14,7 @@ namespace BlogGraphQlApp.Infrastructure
         private readonly AppDbContext _context;
 
         public IRepository<User> Users { get; }
+        public IRepository<RefreshToken> RefreshTokens { get; }
         public IRepository<Post> Posts { get; }
         public IRepository<Reel> Reels { get; }
         public IRepository<Reaction> Reactions { get; }
@@ -59,6 +60,7 @@ namespace BlogGraphQlApp.Infrastructure
         {
             _context = factory.CreateDbContext();
             Users = new Repository<User>(_context);
+            RefreshTokens = new Repository<RefreshToken>(_context);
             Posts = new Repository<Post>(_context);
             Reels = new Repository<Reel>(_context);
             Reactions = new Repository<Reaction>(_context);

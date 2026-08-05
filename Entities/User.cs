@@ -1,4 +1,4 @@
-﻿﻿using BlogGraphQlApp.Entities;
+﻿using BlogGraphQlApp.Entities;
 
 namespace BlogGraphQlApp.Models
 {
@@ -14,6 +14,8 @@ namespace BlogGraphQlApp.Models
         public bool IsEmailVerified { get; set; } = false;
         public bool IsPhoneNumberVerified { get; set; } = false;
         public string PasswordHash { get; set; } = string.Empty;
+        public int FailedLoginAttempts { get; set; } = 0;
+        public DateTime? LockoutEndUtc { get; set; }
         public string? PhoneNumber { get; set; }
         public bool IsOnline { get; set; }
         public DateTime? LastSeen { get; set; }

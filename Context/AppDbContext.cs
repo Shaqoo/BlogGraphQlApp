@@ -25,6 +25,7 @@ namespace BlogGraphQlApp.Data
         public DbSet<Hashtag> Hashtags => Set<Hashtag>();
         public DbSet<PostMention> PostMentions => Set<PostMention>();
         public DbSet<UserWebPushSubscription> WebPushSubscriptions => Set<UserWebPushSubscription>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<ActiveVideoCall> ActiveVideoCalls => Set<ActiveVideoCall>();
         public DbSet<ChatGroup> ChatGroups => Set<ChatGroup>();
         public DbSet<ChatGroupMember> ChatGroupMembers => Set<ChatGroupMember>();

@@ -25,6 +25,8 @@ namespace BlogGraphQlApp.Data.Configurations
             builder.HasIndex(u => new { u.Username, u.Email, u.FullName })
                    .IsFullText();
 
+            builder.Property(u => u.FailedLoginAttempts).HasDefaultValue(0);
+
             builder.HasMany(u => u.Posts).WithOne(p => p.User).HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
             builder.HasMany(u => u.Reels).WithOne(r => r.User).HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
             builder.HasMany(u => u.Notifications).WithOne(n => n.User).HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
