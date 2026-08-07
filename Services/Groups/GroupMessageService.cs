@@ -8,6 +8,7 @@ using BlogGraphQlApp.Entities;
 using BlogGraphQlApp.Enums;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
+using BlogGraphQlApp.Services.Push;
 using BlogGraphQlApp.Storage;
 using HotChocolate.Subscriptions;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ namespace BlogGraphQlApp.Services.Groups
         private readonly INotificationService _notificationService;
         private readonly GroupPermissionService _permissions;
         private readonly ITopicEventSender _eventSender;
+        private readonly IWebPushService _webPush;
         private readonly IMapper _mapper;
         private readonly ILogger<GroupMessageService> _logger;
 
@@ -33,6 +35,7 @@ namespace BlogGraphQlApp.Services.Groups
             INotificationService notificationService,
             GroupPermissionService permissions,
             ITopicEventSender eventSender,
+            IWebPushService webPush,
             IMapper mapper,
             ILogger<GroupMessageService> logger)
         {
@@ -41,6 +44,7 @@ namespace BlogGraphQlApp.Services.Groups
             _notificationService = notificationService;
             _permissions = permissions;
             _eventSender = eventSender;
+            _webPush = webPush;
             _mapper = mapper;
             _logger = logger;
         }
@@ -133,8 +137,40 @@ namespace BlogGraphQlApp.Services.Groups
 
             var dto = await ToDtoAsync(message, group, members.Count, ct);
             await PublishAsync($"{groupId}_GroupMessage", dto, ct);
+            await SendGroupMessagePushAsync(message, group, members, senderId, ct);
             return ApiResponse<GroupMessageDto>.Success(dto, "Message sent.");
         }
+
+        private async Task SendGroupMessagePushAsync(
+            GroupMessage message, ChatGroup group, List<ChatGroupMember> members, Guid senderId, CancellationToken ct)
+        {
+            var recipients = members
+                .Where(m => m.UserId != senderId && ShouldPushToMember(m))
+                .Select(m => m.UserId)
+                .ToList();
+
+            if (recipients.Count == 0)
+                return;
+
+            var sender = members.FirstOrDefault(m => m.UserId == senderId)?.User;
+
+            var payload = new GroupMessagePushPayload
+            {
+                GroupId = group.Id,
+                GroupName = group.Name,
+                SenderId = senderId,
+                SenderName = sender?.FullName ?? "Someone",
+                SenderAvatar = sender?.ProfilePictureUrl,
+                Preview = message.Content ?? message.MessageType.ToString(),
+                Url = $"/groups/{group.Id}"
+            };
+
+            await _webPush.SendToUsersAsync(recipients, payload, ct);
+        }
+
+        private static bool ShouldPushToMember(ChatGroupMember member) =>
+            member.NotificationLevel is NotificationLevel.All &&
+            (!member.Muted || member.MutedUntil == null || member.MutedUntil.Value <= DateTime.UtcNow);
 
         public async Task<ApiResponse<GroupMessageDto>> EditAsync(Guid groupId, Guid messageId, Guid senderId, string content, CancellationToken ct = default)
         {

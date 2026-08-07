@@ -3,9 +3,11 @@ using BlogGraphQlApp.Common;
 using BlogGraphQlApp.Core.Interfaces;
 using BlogGraphQlApp.Dtos;
 using BlogGraphQlApp.DTOs;
+using BlogGraphQlApp.Entities;
 using BlogGraphQlApp.Enums;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
+using BlogGraphQlApp.Services.Push;
 using Microsoft.EntityFrameworkCore;
 using BlogGraphQlApp.Storage;
 
@@ -16,14 +18,16 @@ namespace BlogGraphQlApp.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthService _authService;
         private readonly IFileStorage _fileStorage;
+        private readonly IWebPushService _webPush;
         private readonly IMapper _mapper;
         private readonly ILogger<MessagingService> _logger;
 
-        public MessagingService(IUnitOfWork unitOfWork, IAuthService authService, IFileStorage fileStorage, IMapper mapper, ILogger<MessagingService> logger)
+        public MessagingService(IUnitOfWork unitOfWork, IAuthService authService, IFileStorage fileStorage, IWebPushService webPush, IMapper mapper, ILogger<MessagingService> logger)
         {
             _unitOfWork = unitOfWork;
             _authService = authService;
             _fileStorage = fileStorage;
+            _webPush = webPush;
             _mapper = mapper;
             _logger = logger;
         }
@@ -87,7 +91,24 @@ namespace BlogGraphQlApp.Infrastructure.Services
             // The sender of the replied-to message is mapped from the entity.
             messageDto.Sender = currentUserResponse.Data;
 
+            await SendMessagePushAsync(currentUserResponse.Data, toUserId, conversation.Id, message);
+
             return ApiResponse<MessageDto>.Success(messageDto, "Message sent.");
+        }
+
+        private async Task SendMessagePushAsync(UserDto sender, Guid recipientId, Guid conversationId, Message message)
+        {
+            var payload = new MessagePushPayload
+            {
+                ConversationId = conversationId,
+                SenderId = sender.Id,
+                SenderName = sender.FullName,
+                SenderAvatar = sender.ProfilePictureUrl,
+                Preview = message.Content ?? message.MessageType.ToString(),
+                Url = $"/messages/{conversationId}"
+            };
+
+            await _webPush.SendToUserAsync(recipientId, payload);
         }
 
         public async Task<ApiResponse<IQueryable<ConversationDto>>> GetConversationsAsync()

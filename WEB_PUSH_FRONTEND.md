@@ -73,7 +73,7 @@ mutation RegisterPush($endpoint: String!, $p256dh: String!, $auth: String!) {
 
 ### 3. Service worker: show a notification for each push type
 
-The backend sends JSON with a `type` discriminator. Handle these three types:
+The backend sends JSON with a `type` discriminator. Handle these six types:
 
 ```jsonc
 // 1-to-1 incoming call
@@ -87,6 +87,18 @@ The backend sends JSON with a `type` discriminator. Handle these three types:
 // missed call
 { "type": "call_missed", "callId": "…", "roomName": "…", "callerId": "…",
   "callerName": "…", "callerAvatar": "…", "url": "/call/{callId}" }
+
+// new follower
+{ "type": "new_follower", "followerId": "…", "followerName": "…",
+  "followerAvatar": "…", "url": "/profile/{followerId}" }
+
+// direct message
+{ "type": "message", "conversationId": "…", "senderId": "…", "senderName": "…",
+  "senderAvatar": "…", "preview": "…", "url": "/messages/{conversationId}" }
+
+// group message
+{ "type": "group_message", "groupId": "…", "groupName": "…", "senderId": "…",
+  "senderName": "…", "senderAvatar": "…", "preview": "…", "url": "/groups/{groupId}" }
 ```
 
 ```ts
@@ -110,6 +122,18 @@ self.addEventListener('push', (event) => {
     title = 'Missed call';
     body = data.callerName ? `You missed a call from ${data.callerName}` : 'You missed a call';
     icon = data.callerAvatar || undefined;
+  } else if (type === 'new_follower') {
+    title = `${data.followerName} started following you`;
+    body = 'Tap to view their profile';
+    icon = data.followerAvatar || undefined;
+  } else if (type === 'message') {
+    title = data.senderName;
+    body = data.preview;
+    icon = data.senderAvatar || undefined;
+  } else if (type === 'group_message') {
+    title = `${data.groupName}`;
+    body = `${data.senderName}: ${data.preview}`;
+    icon = data.senderAvatar || undefined;
   } else {
     return; // ignore unknown types
   }
@@ -238,8 +262,43 @@ All are JSON in the push body. `url` is always a frontend route the app must han
 | `callerId` | uuid | |
 | `url` | string | `/call/{callId}` |
 
-> Only these three are sent today. The service worker must ignore unknown `type`
-> values gracefully.
+**`new_follower`** — sent to the **followed user** when someone starts following them
+(`UserFollowService.FollowUserAsync`):
+| Field | Type | Notes |
+|---|---|---|
+| `type` | string | `"new_follower"` |
+| `followerId` | uuid | who started following |
+| `followerName` | string | |
+| `followerAvatar` | string? | |
+| `url` | string | `/profile/{followerId}` |
+
+**`message`** — sent to the **recipient** of a direct message (`MessagingService.SendMessageAsync`):
+| Field | Type | Notes |
+|---|---|---|
+| `type` | string | `"message"` |
+| `conversationId` | uuid | |
+| `senderId` | uuid | who sent the message |
+| `senderName` | string | |
+| `senderAvatar` | string? | |
+| `preview` | string | text content, or the media type (e.g. `Image`) |
+| `url` | string | `/messages/{conversationId}` |
+
+**`group_message`** — sent to **every member with notification level `All`** (non-muted)
+except the sender when a message is posted (`GroupMessageService.SendAsync`):
+| Field | Type | Notes |
+|---|---|---|
+| `type` | string | `"group_message"` |
+| `groupId` | uuid | |
+| `groupName` | string | |
+| `senderId` | uuid | |
+| `senderName` | string | |
+| `senderAvatar` | string? | |
+| `preview` | string | text content, or the media type (e.g. `Image`) |
+| `url` | string | `/groups/{groupId}` |
+
+> These six are the payloads sent today. The service worker must ignore unknown `type`
+> values gracefully. Members with `MentionsOnly`/`Muted` levels do not get general
+> group-message pushes (mention/reply notifications are in-app only for now).
 
 ### B5. Delivery semantics & limits
 

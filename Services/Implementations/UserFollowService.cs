@@ -5,6 +5,7 @@ using BlogGraphQlApp.Entities;
 using BlogGraphQlApp.Enums;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
+using BlogGraphQlApp.Services.Push;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogGraphQlApp.Infrastructure.Services
@@ -13,12 +14,14 @@ namespace BlogGraphQlApp.Infrastructure.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthService _authService;
+        private readonly IWebPushService _webPush;
         private readonly ILogger<UserFollowService> _logger;
 
-        public UserFollowService(IUnitOfWork unitOfWork, IAuthService authService, ILogger<UserFollowService> logger)
+        public UserFollowService(IUnitOfWork unitOfWork, IAuthService authService, IWebPushService webPush, ILogger<UserFollowService> logger)
         {
             _unitOfWork = unitOfWork;
             _authService = authService;
+            _webPush = webPush;
             _logger = logger;
         }
 
@@ -74,8 +77,23 @@ namespace BlogGraphQlApp.Infrastructure.Services
 
             await _unitOfWork.CompleteAsync();
 
+            await SendFollowPushAsync(currentUserResponse.Data, followingId);
+
             _logger.LogInformation("User {FollowerId} started following user {FollowingId}", followerId, followingId);
             return ApiResponse<bool>.Success(true, "Successfully followed user.");
+        }
+
+        private async Task SendFollowPushAsync(UserDto follower, Guid followingId)
+        {
+            var payload = new FollowPushPayload
+            {
+                FollowerId = follower.Id,
+                FollowerName = follower.FullName,
+                FollowerAvatar = follower.ProfilePictureUrl,
+                Url = $"/profile/{follower.Id}"
+            };
+
+            await _webPush.SendToUserAsync(followingId, payload);
         }
 
 
