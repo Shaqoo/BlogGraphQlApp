@@ -3,7 +3,6 @@ using BlogGraphQlApp.Common;
 using BlogGraphQlApp.Core.Interfaces;
 using BlogGraphQlApp.Dtos;
 using BlogGraphQlApp.DTOs;
-using BlogGraphQlApp.External;
 using BlogGraphQlApp.ML;
 using BlogGraphQlApp.Models;
 using BlogGraphQlApp.Repositories.Interfaces;
@@ -17,25 +16,20 @@ namespace BlogGraphQlApp.Infrastructure.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthService _authService;
-        private readonly EmbeddingService _embeddingService;
-        private readonly PineconeService _pinecone;
         private readonly IMapper _mapper;
         private readonly ILogger<RecommendationService> _logger;
         private readonly MLContext _mlContext;
 
-        public RecommendationService(IUnitOfWork unitOfWork, IAuthService authService, EmbeddingService embeddingService, PineconeService pinecone, IMapper mapper, ILogger<RecommendationService> logger)
+        public RecommendationService(IUnitOfWork unitOfWork, IAuthService authService, IMapper mapper, ILogger<RecommendationService> logger)
         {
             _unitOfWork = unitOfWork;
             _authService = authService;
-            _embeddingService = embeddingService;
-            _pinecone = pinecone;
             _mapper = mapper;
             _logger = logger;
             _mlContext = new MLContext();
         }
 
-        public async Task<ApiResponse<IEnumerable<PostDto>>> GetPostRecommendationsAsync(int limit = 10)
-        {
+        public async Task<ApiResponse<IEnumerable<PostDto>>> GetPostRecommendationsAsync(int limit = 10)        {
             var currentUserResponse = await _authService.GetCurrentUserAsync();
             if (!currentUserResponse.Succeeded || currentUserResponse.Data == null)
             {
@@ -88,8 +82,7 @@ namespace BlogGraphQlApp.Infrastructure.Services
             return ApiResponse<IEnumerable<PostDto>>.Success(topRecommendations);
         }
 
-        public async Task<ApiResponse<IEnumerable<ReelDto>>> GetReelRecommendationsAsync(int limit = 10)
-        {
+        public async Task<ApiResponse<IEnumerable<ReelDto>>> GetReelRecommendationsAsync(int limit = 10)        {
             var currentUserResponse = await _authService.GetCurrentUserAsync();
             if (!currentUserResponse.Succeeded || currentUserResponse.Data == null)
             {
@@ -166,170 +159,6 @@ namespace BlogGraphQlApp.Infrastructure.Services
             // Simple rating: 1 point for every 30s, 5 points for a favorite.
             var rating = (interaction.TimeSpentInSeconds / 30.0f) + (interaction.IsFavorite ? 5.0f : 0.0f);
             return Math.Max(1.0f, rating); // Ensure rating is at least 1.
-        }
-
-        public async Task<PaginatedResult<PostDto>> GetRecommendedPostsAsync(
-          Guid userId,
-          int page = 1,
-          int pageSize = 10)
-        {
-            page = Math.Max(page, 1);
-            pageSize = Math.Max(pageSize, 10);
-
-            var skip = (page - 1) * pageSize;
-            var take = page * pageSize; // fetch extra for Pinecone
-
-            // 1. Load user interactions (posts and reels)
-            var interactions = await _unitOfWork.UserInteractions
-                .Find(x => x.UserId == userId)
-                .Include(x => x.Post)
-                .Include(x => x.Reel)
-                .ToListAsync();
-
-            var count = await CountAsync();
-
-            if (!interactions.Any())
-                return PaginatedResult<PostDto>.Create(await GetRandomPostsPagedAsync(skip, pageSize), page, pageSize,count);
-
-            // 2. Build user embedding dynamically
-            var userVector = await BuildUserEmbeddingAsync(interactions);
-            if (userVector == null)
-                return PaginatedResult<PostDto>.Create(await GetRandomPostsPagedAsync(skip, pageSize), page, pageSize,count);
-
-            // 3. Query Pinecone for recommendations
-            var postIds = (await _pinecone.QueryAsync(userVector, take))
-                .Distinct()
-                .ToList();
-
-            if (!postIds.Any())
-                return PaginatedResult<PostDto>.Create(await GetRandomPostsPagedAsync(skip, pageSize), page, pageSize, count);
-
-            // 4. Pagination in memory
-            var pagedIds = postIds.Skip(skip).Take(pageSize).ToList();
-
-            // 5. Load posts from DB in same order
-            var posts = await _unitOfWork.Posts
-                .Find(p => pagedIds.Contains(p.Id.ToString()))
-                .Select(p => new PostDto
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Content = p.Content,
-                    RepliesCount = p.Replies.Count(),
-                    ReactionsCount = p.Reactions.Count(),
-                    CreatedAt = p.CreatedAt,
-                    UserId = p.UserId,
-                    MediaUrl = p.MediaUrl,
-                    Views = p.Views,
-                    Shares = p.Shares,
-                    AttachedSongAlbumArtUrl = p.AttachedSongAlbumArtUrl,
-                    AttachedSongArtist = p.AttachedSongArtist,
-                    AttachedSongPreviewUrl = p.AttachedSongPreviewUrl,
-                    AttachedSongTitle = p.AttachedSongTitle,
-                    BackgroundIdentifier = p.BackgroundIdentifier,
-                    PostType = p.PostType,
-                })
-                .ToListAsync();
-
-            posts = pagedIds.Select(id => posts.First(p => p.Id.ToString() == id)).ToList();
-
-            if (!posts.Any())
-                return PaginatedResult<PostDto>.Create(await GetRandomPostsPagedAsync(skip, pageSize), page, pageSize, count);
-
-            return PaginatedResult<PostDto>.Create(posts, page, pageSize, count);
-        }
-
-        private async Task<float[]?> BuildUserEmbeddingAsync(List<UserInteraction> interactions)
-        {
-            if (!interactions.Any())
-                return null;
-
-            var weightedVectors = new List<(float[] Vector, float Weight)>();
-
-            foreach (var interaction in interactions)
-            {
-                float[]? vector = null;
-                if (interaction.Post != null)
-                {
-                    // Text post embedding
-                    vector = await _embeddingService.CreateTextEmbeddingAsync(
-                        interaction.Post.Title + " " + interaction.Post.Content);
-                }
-                //else if (interaction.Reel != null)
-                //{
-                //    // Media embedding
-                //    vector = await _embeddingService.CreateMediaEmbeddingAsync(interaction.Reel.Base64Media);
-                //}
-
-                if (vector != null)
-                {
-                    var weight = CalculateWeight(interaction);
-                    weightedVectors.Add((vector, weight));
-                }
-            }
-
-            if (!weightedVectors.Any())
-                return null;
-
-            // Weighted average
-            var dimension = weightedVectors[0].Vector.Length;
-            var result = new float[dimension];
-            float totalWeight = 0;
-
-            foreach (var item in weightedVectors)
-            {
-                for (int i = 0; i < dimension; i++)
-                    result[i] += item.Vector[i] * item.Weight;
-                totalWeight += item.Weight;
-            }
-
-            for (int i = 0; i < dimension; i++)
-                result[i] /= totalWeight;
-
-            return result;
-        }
-
-        private float CalculateWeight(UserInteraction interaction)
-        {
-            var weight = 1f;
-            weight += interaction.TimeSpentInSeconds / 30f;
-            if (interaction.IsFavorite)
-                weight *= 2f;
-            weight *= (1f - interaction.DecayRate);
-            return weight;
-        }
-
-        private async Task<List<PostDto>> GetRandomPostsPagedAsync(int skip, int take)
-        {
-            var posts = await _unitOfWork.Posts.GetAll()
-                .OrderBy(x => Guid.NewGuid())
-                .Skip(skip)
-                .Take(take)
-                .Select(p => new PostDto
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Content = p.Content,
-                    RepliesCount = p.Replies.Count(),
-                    ReactionsCount = p.Reactions.Count(),
-                    CreatedAt = p.CreatedAt,
-                    MediaUrl = p.MediaUrl,
-                    Views = p.Views,
-                    UserId = p.UserId,
-                    Shares = p.Shares,
-                    AttachedSongAlbumArtUrl = p.AttachedSongAlbumArtUrl,
-                    AttachedSongArtist = p.AttachedSongArtist,
-                    AttachedSongPreviewUrl = p.AttachedSongPreviewUrl,
-                    AttachedSongTitle = p.AttachedSongTitle,
-                    BackgroundIdentifier = p.BackgroundIdentifier,
-                    PostType = p.PostType,
-                }).ToListAsync();
-
-            return posts;
-        }
-        private Task<int> CountAsync()
-        {
-            return _unitOfWork.Posts.CountAsync(a => !a.IsDeleted);
         }
     }
 }
